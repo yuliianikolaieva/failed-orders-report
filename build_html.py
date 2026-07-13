@@ -120,6 +120,23 @@ for idx,(g,v) in enumerate(top):
       <td><span style="color:{RCOLOR.get(dr,'#333')};font-weight:600">{dr}</span> <span style="color:#6b7280">{drp:.0f}%</span></td>
     </tr>""".replace(",", " ")
 
+# totals row for top-15 table (summed header)
+t_created=sum(v[0] for _,v in top)
+t_failed=sum(v[2] for _,v in top)
+t_rate=t_failed/t_created*100 if t_created else 0
+t_lost=sum(gmv[g][1] for g,_ in top)
+_dr=max(rtot,key=rtot.get) if rtot else "—"
+_drp=rtot[_dr]/TF*100 if TF else 0
+totals_row=f"""<tr style="background:#1A1A2E">
+  <td style="color:#fff;font-weight:700">РАЗОМ топ-15 ({TOPN})</td>
+  <td class="num" style="color:#fff;font-weight:700">{t_created:,}</td>
+  <td class="num" style="color:#fff;font-weight:700">{t_failed:,}</td>
+  <td class="num"><span class="badge badge-r">{t_rate:.1f}%</span></td>
+  <td class="num" style="color:#fca5a5;font-weight:800">€{t_lost:,.0f}</td>
+  <td class="num" style="color:#9ca3af">{t_failed/F*100:.0f}% усіх фейлів</td>
+  <td style="color:#e5e7eb"><span class="dot" style="background:{RCOLOR.get(_dr,'#fff')}"></span> {_dr} <span style="color:#9ca3af">{_drp:.0f}%</span></td>
+</tr>""".replace(",", " ")
+
 # heatmap rows
 heat_html=""
 for g,_ in top:
@@ -372,7 +389,7 @@ tr:hover{{background:#f9fafb}}
   <div class="card">
     <table>
       <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Втрач. GMV</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
-      <tbody>{rows_html}</tbody>
+      <tbody>{totals_row}{rows_html}</tbody>
     </table>
   </div>
 </div>
