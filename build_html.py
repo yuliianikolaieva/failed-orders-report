@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-"""Генерує index.html — тижневий аналіз failed-ордерів по топ-10 партнерах (UA stores)."""
+"""Генерує index.html — тижневий аналіз failed-ордерів по топ-15 партнерах (UA stores)."""
 import json, collections
 from pathlib import Path
 HERE = Path(__file__).parent
@@ -28,8 +28,9 @@ tot = collections.defaultdict(lambda:[0,0,0])
 for r in wt:
     g=r["grp"] or "—"; tot[g][0]+=i(r["total"]); tot[g][1]+=i(r["delivered"]); tot[g][2]+=i(r["failed"])
 G=sum(v[0] for v in tot.values()); D=sum(v[1] for v in tot.values()); F=sum(v[2] for v in tot.values())
-top = sorted(tot.items(), key=lambda kv:-kv[1][2])[:10]
+top = sorted(tot.items(), key=lambda kv:-kv[1][2])[:15]
 topnames=[g for g,_ in top]
+TOPN=len(top)
 
 # ---- overall weekly ----
 ow = collections.defaultdict(lambda:[0,0,0])
@@ -90,7 +91,7 @@ def wow(g):
 
 # ============ build partner rows ============
 rows_html=""
-medals=["🥇","🥈","🥉"]+[""]*7
+medals=["🥇","🥈","🥉"]+[""]*20
 for idx,(g,v) in enumerate(top):
     total,deliv,fail=v; rate=fail/total*100
     dr,drp=dom_reason(g)
@@ -137,6 +138,62 @@ for s in stores:
 # reason legend
 legend_html="".join(f'<span><span class="dot" style="background:{RCOLOR[r]}"></span>{r}</span>' for r in REASONS)
 
+# ---- пояснення причин (що саме означає) ----
+EXPLAIN = {
+ 'Партнер відхилив': {
+   'flag':'is_rejected_by_provider = true · order_state = rejected',
+   'who':'Партнер','fault':'fault',
+   'what':'Партнер <b>активно натиснув «Відхилити»</b> у планшеті/додатку Bolt на вхідне замовлення. За правилами Bolt це роблять, коли позиції немає в наявності, кухня/склад закривається або точка перевантажена і не встигає зібрати.',
+   'why':'Замовлення так і не було прийняте — клієнт одразу отримує скасування. Це прямий сигнал про <b>out-of-stock, неактуальне меню або режим роботи</b>.'
+ },
+ 'Партнер не відповів (тайм-аут)': {
+   'flag':'is_not_responded_by_provider = true · order_state = rejected',
+   'who':'Партнер','fault':'fault',
+   'what':'Партнер <b>не відреагував на замовлення протягом 5 хвилин</b> (за загальними умовами Bolt партнер має підтвердити або відхилити протягом 5 хв). Після тайм-ауту Bolt <b>автоматично скасовує</b> замовлення й компенсує клієнту.',
+   'why':'Найтиповіша партнерська причина. Означає, що <b>ніхто не дивиться в планшет</b>: не заряджений/вимкнений девайс, немає звуку сповіщень, точка фактично не працює, або не увімкнено auto-accept.'
+ },
+ 'Партнер не прийняв (інше)': {
+   'flag':'is_order_not_accepted_by_provider = true (без rejected/тайм-ауту)',
+   'who':'Партнер','fault':'fault',
+   'what':'Замовлення <b>не отримало статусу «Прийнято»</b> з боку партнера, але це не класичне «відхилив» і не чистий 5-хв тайм-аут (проміжні/технічні сценарії неприйняття на стороні точки).',
+   'why':'Залишкова партнерська категорія — теж вказує на проблеми з прийняттям замовлень на точці.'
+ },
+ 'Клієнт скасував': {
+   'flag':'has_eater_cancellation_ticket = true',
+   'who':'Клієнт','fault':'neutral',
+   'what':'На замовлення заведено <b>тикет скасування від клієнта</b> — користувач сам скасував (передумав, помилився, надто довге очікування).',
+   'why':'Не провина партнера напряму, але <b>довге очікування/повільне прийняття</b> провокує скасування. Частина таких замовлень встигла бути прийнятою партнером до скасування.'
+ },
+ "Проблема з кур'єром": {
+   'flag':'number_courier_rejects > 0',
+   'who':'Логістика','fault':'neutral',
+   'what':'По замовленню були <b>відмови кур\'єрів</b> від призначення (або кур\'єра не вдалося знайти вчасно). Замовлення падає на етапі доставки.',
+   'why':'Проблема ліквідності кур\'єрів / зон доставки, а не партнера. Іноді комбінується зі скасуванням клієнта через довге очікування.'
+ },
+ 'Система / оплата / інше': {
+   'flag':'жоден прапорець не спрацював',
+   'who':'Система','fault':'neutral',
+   'what':'Замовлення впало <b>без явного прапорця причини</b>: найчастіше це <b>відхилення оплати/авторизації картки</b>, технічні/платіжні збої або антифрод (за класифікацією Bolt статус Failed = payment declined / processing error).',
+   'why':'Не залежить від партнера. Дивитись у бік платіжного процесингу та технічних інцидентів.'
+ },
+}
+FAULTBADGE={'fault':('badge-r','Партнер'),'neutral':('badge-b',None)}
+explain_html=""
+for reason in REASONS:
+    e=EXPLAIN[reason]; n=rtot.get(reason,0); pct=n/TF*100 if TF else 0
+    whocls={'Партнер':'badge-r','Клієнт':'badge-b','Логістика':'badge-y','Система':'badge-y'}.get(e['who'],'badge-b')
+    explain_html+=f"""<div class="card" style="border-left:4px solid {RCOLOR[reason]}">
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <span class="dot" style="background:{RCOLOR[reason]};width:12px;height:12px"></span>
+        <h3 style="margin:0">{reason}</h3>
+        <span class="badge {whocls}" style="margin-left:auto">{e['who']}</span>
+        <span class="badge badge-y">{n} · {pct:.0f}%</span>
+      </div>
+      <div style="font-size:12.5px;color:#374151;margin-bottom:8px">{e['what']}</div>
+      <div style="font-size:12px;color:#6b7280;margin-bottom:8px"><b>Наслідок:</b> {e['why']}</div>
+      <div style="font-size:11px;color:#334155;background:#f1f5f9;border-radius:6px;padding:6px 9px"><code style="font-size:11px">{e['flag']}</code></div>
+    </div>"""
+
 # chart data
 import json as _j
 JS = {
@@ -155,7 +212,7 @@ HTML = f"""<!DOCTYPE html>
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Bolt Food UA — Failed Orders: тижневий розбір топ-10 партнерів</title>
+<title>Bolt Food UA — Failed Orders: тижневий розбір топ-15 партнерів</title>
 <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
 <style>
@@ -221,10 +278,10 @@ tr:hover{{background:#f9fafb}}
   <div class="logo-dot">✕</div>
   <div>
     <h1>Failed Orders — тижневий розбір</h1>
-    <div class="subtitle">Bolt Food UA · Stores · Топ-10 партнерів за failed-ордерами · причини та розбивка по тижнях</div>
+    <div class="subtitle">Bolt Food UA · Stores · Топ-15 партнерів за failed-ордерами · причини, пояснення та розбивка по тижнях</div>
   </div>
   <div class="report-meta">
-    Дані: 11.05 – 12.07.2026 (9 повних тижнів)<br>
+    Період: 01.05 – 30.06.2026 (10 тижнів, 2 часткові)<br>
     Джерело: Databricks · <code>fact_order_delivery</code><br>
     Сформовано: 13.07.2026
     <br>
@@ -239,7 +296,7 @@ tr:hover{{background:#f9fafb}}
 <div class="section">
   <div class="insight crit">
     <div class="insight-title">Головний висновок: половина втрачених замовлень — на боці партнера</div>
-    <div class="insight-text">За останні 2 місяці по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-10 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
+    <div class="insight-text">За 01.05–30.06.2026 по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-15 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли за 5 хв / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
   </div>
 </div>
 
@@ -247,22 +304,34 @@ tr:hover{{background:#f9fafb}}
 <div class="section">
   <div class="grid-4">
     <div class="card kpi"><div class="kpi-label">Failed ордери (UA stores)</div><div class="kpi-value">{fmt(F)}</div><div class="kpi-sub down">{F/G*100:.1f}% fail-rate</div></div>
-    <div class="card kpi"><div class="kpi-label">Топ-10 партнерів = частка фейлів</div><div class="kpi-value">{sum(v[2] for _,v in top)/F*100:.0f}%</div><div class="kpi-sub neutral">{fmt(sum(v[2] for _,v in top))} з {fmt(F)}</div></div>
-    <div class="card kpi"><div class="kpi-label">Партнерська провина (топ-10)</div><div class="kpi-value">{prov_share:.0f}%</div><div class="kpi-sub down">не відповіли / відхилили</div></div>
+    <div class="card kpi"><div class="kpi-label">Топ-15 партнерів = частка фейлів</div><div class="kpi-value">{sum(v[2] for _,v in top)/F*100:.0f}%</div><div class="kpi-sub neutral">{fmt(sum(v[2] for _,v in top))} з {fmt(F)}</div></div>
+    <div class="card kpi"><div class="kpi-label">Партнерська провина (топ-15)</div><div class="kpi-value">{prov_share:.0f}%</div><div class="kpi-sub down">не відповіли / відхилили</div></div>
     <div class="card kpi"><div class="kpi-label">Найгірший партнер</div><div class="kpi-value" style="font-size:20px">BEER MARKET</div><div class="kpi-sub down">{tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}% fail-rate</div></div>
+  </div>
+</div>
+
+<!-- REASON EXPLANATIONS -->
+<div class="section">
+  <h2>1. Що означає кожна причина</h2>
+  <div class="insight" style="margin-bottom:14px">
+    <div class="insight-title">Спершу: чим «rejected» відрізняється від «failed»</div>
+    <div class="insight-text"><b>rejected</b> — партнер <b>жодного разу не прийняв</b> замовлення (відхилив або не встиг за 5 хв → Bolt авто-скасовує). <b>failed</b> — замовлення зламалося <b>здебільшого вже ПІСЛЯ прийняття партнером</b> (≈87% failed-ордерів були прийняті, а потім впали через кур'єра, скасування клієнта чи оплату). Нижче — 6 взаємовиключних причин, до яких ми звели обидва стани.</div>
+  </div>
+  <div class="grid-3">
+    {explain_html}
   </div>
 </div>
 
 <!-- TREND -->
 <div class="section">
-  <h2>1. Динаміка по тижнях (уся мережа UA Stores)</h2>
+  <h2>2. Динаміка по тижнях (уся мережа UA Stores)</h2>
   <div class="grid-2">
     <div class="card">
       <h3>Failed-ордери та fail-rate по тижнях</h3>
       <div class="chart-box"><canvas id="chartTrend"></canvas></div>
     </div>
     <div class="card">
-      <h3>Структура причин по тижнях (топ-10 партнерів)</h3>
+      <h3>Структура причин по тижнях (топ-15 партнерів)</h3>
       <div class="chart-box"><canvas id="chartReasonWeek"></canvas></div>
       <div class="legend">{legend_html}</div>
     </div>
@@ -271,7 +340,7 @@ tr:hover{{background:#f9fafb}}
 
 <!-- TOP10 TABLE -->
 <div class="section">
-  <h2>2. Топ-10 партнерів за кількістю failed-ордерів</h2>
+  <h2>3. Топ-15 партнерів за кількістю failed-ордерів</h2>
   <div class="card">
     <table>
       <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
@@ -282,10 +351,10 @@ tr:hover{{background:#f9fafb}}
 
 <!-- REASON MIX + HEATMAP -->
 <div class="section">
-  <h2>3. Причини фейлів та тижнева теплокарта</h2>
+  <h2>4. Причини фейлів та тижнева теплокарта</h2>
   <div class="grid-2">
     <div class="card">
-      <h3>Розподіл причин (топ-10, {fmt(TF)} фейлів)</h3>
+      <h3>Розподіл причин (топ-15, {fmt(TF)} фейлів)</h3>
       <div class="chart-box"><canvas id="chartReasonMix"></canvas></div>
     </div>
     <div class="card">
@@ -303,7 +372,7 @@ tr:hover{{background:#f9fafb}}
 
 <!-- PER PARTNER REASON -->
 <div class="section">
-  <h2>4. Структура причин по кожному партнеру</h2>
+  <h2>5. Структура причин по кожному партнеру</h2>
   <div class="card">
     {pbar_html}
     <div class="legend">{legend_html}</div>
@@ -312,7 +381,7 @@ tr:hover{{background:#f9fafb}}
 
 <!-- WHAT HAPPENED -->
 <div class="section">
-  <h2>5. Що трапилось — розбір за тижнями</h2>
+  <h2>6. Що трапилось — розбір за тижнями</h2>
   <div class="grid-2">
     <div class="insight crit">
       <div class="insight-title">BEER MARKET — системний партнерський фейл</div>
@@ -326,16 +395,20 @@ tr:hover{{background:#f9fafb}}
       <div class="insight-title">VARUS — під контролем, покращення</div>
       <div class="insight-text">Найбільший за обсягом ({fmt(tot['VARUS'][0])} замовлень), але fail-rate помірний ({tot['VARUS'][2]/tot['VARUS'][0]*100:.1f}%) і <b>знизився</b> з 7,8% до 5,5%. Абсолютна кількість фейлів велика через масштаб, а не через якість.</div>
     </div>
+    <div class="insight warn">
+      <div class="insight-title">Малі точки з екстремальним fail-rate</div>
+      <div class="insight-text">Кілька дрібних за обсягом партнерів дають <b>40–60% fail-rate</b> (напр. VAPERY | VAPE SHOP ~59%, RODYNNA KOVBASKA ~47%). Абсолют невеликий, але це майже непрацюючі точки — кандидати на паузу/деактивацію або терміновий розбір режиму роботи.</div>
+    </div>
     <div class="insight action">
       <div class="insight-title">Куди дивитись далі</div>
-      <div class="insight-text">50% фейлів топ-10 — партнерські. Пріоритет: (1) BEER MARKET, ANRI-PHARM, PYVNA BORODA, RUKAVYCHKA, BEERLAND — fail-rate &gt;10%; (2) увімкнути/перевірити auto-accept та години роботи; (3) алерти на партнерів з тайм-аутом прийняття.</div>
+      <div class="insight-text">{prov_share:.0f}% фейлів топ-15 — партнерські. Пріоритет: (1) BEER MARKET, ANRI-PHARM, PYVNA BORODA, RUKAVYCHKA, BEERLAND — fail-rate &gt;10%; (2) увімкнути/перевірити <b>auto-accept</b> та години роботи; (3) алерти на партнерів з тайм-аутом прийняття (5-хв правило); (4) окремо — платіжні фейли в категорії «Система / оплата».</div>
     </div>
   </div>
 </div>
 
 <!-- STORES -->
 <div class="section">
-  <h2>6. Топ точок-порушників (у межах топ-10 партнерів)</h2>
+  <h2>7. Топ точок-порушників (у межах топ-15 партнерів)</h2>
   <div class="card">
     <table>
       <thead><tr><th>Партнер</th><th>Точка</th><th>Місто</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th></tr></thead>
@@ -346,7 +419,7 @@ tr:hover{{background:#f9fafb}}
 
 <!-- METHOD -->
 <div class="section">
-  <h2>7. Методологія та пояснення розрахунку (dbx)</h2>
+  <h2>8. Методологія та пояснення розрахунку (dbx)</h2>
   <div class="method">
     <h3>Джерело даних</h3>
     <p>Databricks (профіль <code>bolt-common</code>), таблиця фактів замовлень <code>hive_metastore.ng_delivery_spark.fact_order_delivery</code>, зджойнена з <code>dim_provider_v2</code> по <code>provider_id</code>. Фільтр: <code>country_code='ua'</code>, <code>delivery_vertical LIKE 'store%'</code>, період <code>order_created_date</code> 11.05–12.07.2026.</p>
@@ -360,7 +433,7 @@ tr:hover{{background:#f9fafb}}
     4. <code>has_eater_cancellation_ticket</code> → <b>Клієнт скасував</b><br>
     5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з кур'єром</b><br>
     6. інакше → <b>Система / оплата / інше</b></p>
-    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Останній неповний тиждень (13.07+) виключено. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-10 обрано за абсолютною кількістю failed-ордерів.</p>
+    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 29.06 (лише 29–30.06) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
   </div>
 </div>
 

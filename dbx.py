@@ -34,7 +34,6 @@ def run(sql):
             headers={"Authorization": "Bearer %s" % TOKEN}), context=_CTX))
     if d["status"]["state"] != "SUCCEEDED":
         raise SystemExit("FAIL " + json.dumps(d["status"]))
-    cols = [c["name"] for c in d["result"]["manifest"]["schema"]["columns"]] if False else None
     return d.get("result", {}).get("data_array", []) or []
 
 

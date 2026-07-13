@@ -1,8 +1,13 @@
 # Failed Orders — Weekly Deep-Dive (UA Stores)
 
-Тижневий аналіз failed-ордерів по Bolt Food UA Stores за останні ~2 місяці:
-топ-10 партнерів за кількістю фейлів, причини (реконструйовані з прапорців),
-розбивка по тижнях, теплокарта fail-rate і топ точок-порушників.
+Тижневий аналіз failed-ордерів по Bolt Food UA Stores за 01.05–30.06.2026:
+топ-15 партнерів за кількістю фейлів, пояснення кожної причини, розбивка
+по тижнях, теплокарта fail-rate і топ точок-порушників.
+
+## Що означає кожна причина (rejected vs failed)
+
+- `rejected` — партнер жодного разу не прийняв замовлення (відхилив або не встиг за 5 хв → Bolt авто-скасовує).
+- `failed` — замовлення зламалося переважно вже ПІСЛЯ прийняття (≈87% failed були прийняті), через кур'єра / скасування клієнта / оплату.
 
 ## Structure
 
@@ -23,7 +28,7 @@ python3 build_html.py    # render index.html
 
 Source: Databricks `hive_metastore.ng_delivery_spark.fact_order_delivery` joined to
 `dim_provider_v2`, Bolt UA, `delivery_vertical LIKE 'store%'`, period by `order_created_date`
-11.05–12.07.2026 (9 повних тижнів Пн–Нд).
+01.05–30.06.2026 (10 тижнів Пн–Нд; крайові тижні 27.04 і 29.06 часткові).
 
 - **Failed order** = `order_state IN ('failed','rejected')`.
 - **Fail-rate** = failed / усі створені замовлення (delivered + failed + rejected + waiting).
