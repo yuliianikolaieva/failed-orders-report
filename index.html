@@ -95,9 +95,9 @@ tr:hover{background:#f9fafb}
 <div class="section">
   <div class="grid-4">
     <div class="card kpi"><div class="kpi-label">Failed ордери (UA stores)</div><div class="kpi-value">5 370</div><div class="kpi-sub down">7.2% fail-rate</div></div>
-    <div class="card kpi"><div class="kpi-label">Топ-15 партнерів = частка фейлів</div><div class="kpi-value">83%</div><div class="kpi-sub neutral">4 455 з 5 370</div></div>
+    <div class="card kpi"><div class="kpi-label">Втрачений GMV (орієнтовно)</div><div class="kpi-value" style="color:#991b1b">€66.8k</div><div class="kpi-sub down">7.3% від потенц. GMV</div></div>
     <div class="card kpi"><div class="kpi-label">Партнерська провина (топ-15)</div><div class="kpi-value">54%</div><div class="kpi-sub down">не відповіли / відхилили</div></div>
-    <div class="card kpi"><div class="kpi-label">Найгірший партнер</div><div class="kpi-value" style="font-size:20px">BEER MARKET</div><div class="kpi-sub down">16.6% fail-rate</div></div>
+    <div class="card kpi"><div class="kpi-label">Найгірший партнер</div><div class="kpi-value" style="font-size:20px">BEER MARKET</div><div class="kpi-sub down">16.6% · €12.8k</div></div>
   </div>
 </div>
 
@@ -152,9 +152,9 @@ tr:hover{background:#f9fafb}
     </div><div class="card" style="border-left:4px solid #7c3aed">
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
         <span class="dot" style="background:#7c3aed;width:12px;height:12px"></span>
-        <h3 style="margin:0">Проблема з кур'єром</h3>
+        <h3 style="margin:0">Проблема з курʼєром</h3>
         <span class="badge badge-y" style="margin-left:auto">Логістика</span>
-        <span class="badge badge-y">0 · 0%</span>
+        <span class="badge badge-y">578 · 13%</span>
       </div>
       <div style="font-size:12.5px;color:#374151;margin-bottom:8px">По замовленню були <b>відмови кур'єрів</b> від призначення (або кур'єра не вдалося знайти вчасно). Замовлення падає на етапі доставки.</div>
       <div style="font-size:12px;color:#6b7280;margin-bottom:8px"><b>Наслідок:</b> Проблема ліквідності кур'єрів / зон доставки, а не партнера. Іноді комбінується зі скасуванням клієнта через довге очікування.</div>
@@ -184,7 +184,7 @@ tr:hover{background:#f9fafb}
     <div class="card">
       <h3>Структура причин по тижнях (топ-15 партнерів)</h3>
       <div class="chart-box"><canvas id="chartReasonWeek"></canvas></div>
-      <div class="legend"><span><span class="dot" style="background:#dc2626"></span>Партнер відхилив</span><span><span class="dot" style="background:#ea580c"></span>Партнер не відповів (тайм-аут)</span><span><span class="dot" style="background:#f59e0b"></span>Партнер не прийняв (інше)</span><span><span class="dot" style="background:#2563eb"></span>Клієнт скасував</span><span><span class="dot" style="background:#7c3aed"></span>Проблема з кур'єром</span><span><span class="dot" style="background:#6b7280"></span>Система / оплата / інше</span></div>
+      <div class="legend"><span><span class="dot" style="background:#dc2626"></span>Партнер відхилив</span><span><span class="dot" style="background:#ea580c"></span>Партнер не відповів (тайм-аут)</span><span><span class="dot" style="background:#f59e0b"></span>Партнер не прийняв (інше)</span><span><span class="dot" style="background:#2563eb"></span>Клієнт скасував</span><span><span class="dot" style="background:#7c3aed"></span>Проблема з курʼєром</span><span><span class="dot" style="background:#6b7280"></span>Система / оплата / інше</span></div>
     </div>
   </div>
 </div>
@@ -194,12 +194,13 @@ tr:hover{background:#f9fafb}
   <h2>3. Топ-15 партнерів за кількістю failed-ордерів</h2>
   <div class="card">
     <table>
-      <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
+      <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Втрач. GMV</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
       <tbody><tr>
       <td>🥇 <b>BEER MARKET</b><div style="font-size:10px;color:#6b7280">Enterprise (AM Segment)</div></td>
       <td class="num">7 413</td>
       <td class="num"><b>1 231</b></td>
       <td class="num"><span class="badge badge-r">16.6%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€12 782</td>
       <td class="num"><span class="down">+9.2 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">43%</span></td>
     </tr><tr>
@@ -207,6 +208,7 @@ tr:hover{background:#f9fafb}
       <td class="num">14 729</td>
       <td class="num"><b>1 082</b></td>
       <td class="num"><span class="badge badge-y">7.3%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€13 311</td>
       <td class="num"><span class="up">-7.9 п.п.</span></td>
       <td><span style="color:#6b7280;font-weight:600">Система / оплата / інше</span> <span style="color:#6b7280">38%</span></td>
     </tr><tr>
@@ -214,6 +216,7 @@ tr:hover{background:#f9fafb}
       <td class="num">2 590</td>
       <td class="num"><b>286</b></td>
       <td class="num"><span class="badge badge-y">11.0%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€3 141</td>
       <td class="num"><span class="up">-5.1 п.п.</span></td>
       <td><span style="color:#dc2626;font-weight:600">Партнер відхилив</span> <span style="color:#6b7280">84%</span></td>
     </tr><tr>
@@ -221,6 +224,7 @@ tr:hover{background:#f9fafb}
       <td class="num">4 606</td>
       <td class="num"><b>252</b></td>
       <td class="num"><span class="badge badge-g">5.5%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€2 923</td>
       <td class="num"><span class="down">+3.8 п.п.</span></td>
       <td><span style="color:#6b7280;font-weight:600">Система / оплата / інше</span> <span style="color:#6b7280">29%</span></td>
     </tr><tr>
@@ -228,6 +232,7 @@ tr:hover{background:#f9fafb}
       <td class="num">843</td>
       <td class="num"><b>239</b></td>
       <td class="num"><span class="badge badge-r">28.4%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€2 259</td>
       <td class="num"><span class="up">-32.5 п.п.</span></td>
       <td><span style="color:#6b7280;font-weight:600">Система / оплата / інше</span> <span style="color:#6b7280">46%</span></td>
     </tr><tr>
@@ -235,6 +240,7 @@ tr:hover{background:#f9fafb}
       <td class="num">2 262</td>
       <td class="num"><b>232</b></td>
       <td class="num"><span class="badge badge-y">10.3%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€2 647</td>
       <td class="num"><span class="up">-2.6 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">43%</span></td>
     </tr><tr>
@@ -242,13 +248,15 @@ tr:hover{background:#f9fafb}
       <td class="num">7 060</td>
       <td class="num"><b>212</b></td>
       <td class="num"><span class="badge badge-g">3.0%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€1 905</td>
       <td class="num"><span class="up">-3.4 п.п.</span></td>
-      <td><span style="color:#333;font-weight:600">Проблема з курєром</span> <span style="color:#6b7280">33%</span></td>
+      <td><span style="color:#7c3aed;font-weight:600">Проблема з курʼєром</span> <span style="color:#6b7280">33%</span></td>
     </tr><tr>
       <td> <b>LOKO</b><div style="font-size:10px;color:#6b7280">Enterprise (AM Segment)</div></td>
       <td class="num">9 063</td>
       <td class="num"><b>211</b></td>
       <td class="num"><span class="badge badge-g">2.3%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€3 316</td>
       <td class="num"><span class="up">-1.9 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">52%</span></td>
     </tr><tr>
@@ -256,6 +264,7 @@ tr:hover{background:#f9fafb}
       <td class="num">1 938</td>
       <td class="num"><b>206</b></td>
       <td class="num"><span class="badge badge-y">10.6%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€3 326</td>
       <td class="num"><span class="down">+1.4 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">59%</span></td>
     </tr><tr>
@@ -263,6 +272,7 @@ tr:hover{background:#f9fafb}
       <td class="num">2 157</td>
       <td class="num"><b>151</b></td>
       <td class="num"><span class="badge badge-y">7.0%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€1 973</td>
       <td class="num"><span class="up">-3.2 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">66%</span></td>
     </tr><tr>
@@ -270,6 +280,7 @@ tr:hover{background:#f9fafb}
       <td class="num">2 064</td>
       <td class="num"><b>76</b></td>
       <td class="num"><span class="badge badge-g">3.7%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€1 101</td>
       <td class="num"><span class="down">+4.2 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">50%</span></td>
     </tr><tr>
@@ -277,6 +288,7 @@ tr:hover{background:#f9fafb}
       <td class="num">2 965</td>
       <td class="num"><b>74</b></td>
       <td class="num"><span class="badge badge-g">2.5%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€1 014</td>
       <td class="num"><span class="up">-1.4 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">45%</span></td>
     </tr><tr>
@@ -284,6 +296,7 @@ tr:hover{background:#f9fafb}
       <td class="num">155</td>
       <td class="num"><b>73</b></td>
       <td class="num"><span class="badge badge-r">47.1%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€1 092</td>
       <td class="num"><span class="up">-50.0 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">49%</span></td>
     </tr><tr>
@@ -291,6 +304,7 @@ tr:hover{background:#f9fafb}
       <td class="num">122</td>
       <td class="num"><b>72</b></td>
       <td class="num"><span class="badge badge-r">59.0%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€1 216</td>
       <td class="num"><span class="up">-50.0 п.п.</span></td>
       <td><span style="color:#ea580c;font-weight:600">Партнер не відповів (тайм-аут)</span> <span style="color:#6b7280">54%</span></td>
     </tr><tr>
@@ -298,6 +312,7 @@ tr:hover{background:#f9fafb}
       <td class="num">1 026</td>
       <td class="num"><b>58</b></td>
       <td class="num"><span class="badge badge-g">5.7%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€670</td>
       <td class="num"><span class="down">+2.6 п.п.</span></td>
       <td><span style="color:#dc2626;font-weight:600">Партнер відхилив</span> <span style="color:#6b7280">62%</span></td>
     </tr></tbody>
@@ -305,9 +320,41 @@ tr:hover{background:#f9fafb}
   </div>
 </div>
 
+<!-- LOST GMV -->
+<div class="section">
+  <h2>4. Скільки GMV втрачено</h2>
+  <div class="insight warn" style="margin-bottom:14px">
+    <div class="insight-title">≈ €66,831 втраченого GMV за 2 місяці</div>
+    <div class="insight-text">Кожен failed/rejected ордер несе свою вартість кошика (<code>order_gmv_eur</code>), тому це <b>пряма оцінка</b>, а не проєкція. Разом по UA Stores впало <b>€66,831</b> — це <b>7.3%</b> від потенційного GMV (доставлено €842,560). З них у топ-15 — €52,677, а <b>€28,938 (55%) — через партнерські причини</b> (найбільш «поверненна» частина, якщо полагодити прийняття замовлень).</div>
+  </div>
+  <div class="grid-3" style="margin-bottom:16px">
+    <div class="card kpi"><div class="kpi-label">Втрачено GMV, усього</div><div class="kpi-value" style="color:#991b1b">€66.8k</div><div class="kpi-sub down">7.3% від потенц.</div></div>
+    <div class="card kpi"><div class="kpi-label">Партнерські причини (топ-15)</div><div class="kpi-value" style="color:#ea580c">€28.9k</div><div class="kpi-sub neutral">55% — потенційно поверненно</div></div>
+    <div class="card kpi"><div class="kpi-label">У середньому за тиждень</div><div class="kpi-value">€6.7k</div><div class="kpi-sub stable">по 10 тижнях</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Втрачений GMV по тижнях, €</h3>
+      <div class="chart-box"><canvas id="chartLost"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Втрачений GMV за причиною (топ-15)</h3>
+      <table>
+        <thead><tr><th>Причина</th><th>Хто</th><th class="num">Втрач. GMV</th><th class="num">Частка</th></tr></thead>
+        <tbody><tr><td><span class="dot" style="background:#ea580c"></span> Партнер не відповів (тайм-аут)</td><td>Партнер</td><td class="num"><b>€15 918</b></td><td class="num">30%</td></tr><tr><td><span class="dot" style="background:#6b7280"></span> Система / оплата / інше</td><td>Система</td><td class="num"><b>€11 457</b></td><td class="num">22%</td></tr><tr><td><span class="dot" style="background:#dc2626"></span> Партнер відхилив</td><td>Партнер</td><td class="num"><b>€10 260</b></td><td class="num">19%</td></tr><tr><td><span class="dot" style="background:#7c3aed"></span> Проблема з курʼєром</td><td>Логістика</td><td class="num"><b>€6 549</b></td><td class="num">12%</td></tr><tr><td><span class="dot" style="background:#2563eb"></span> Клієнт скасував</td><td>Клієнт</td><td class="num"><b>€5 733</b></td><td class="num">11%</td></tr><tr><td><span class="dot" style="background:#f59e0b"></span> Партнер не прийняв (інше)</td><td>Партнер</td><td class="num"><b>€2 760</b></td><td class="num">5%</td></tr></tbody>
+      </table>
+      <h3 style="margin-top:16px">Топ-8 партнерів за втраченим GMV</h3>
+      <table>
+        <thead><tr><th>Партнер</th><th class="num">Failed</th><th class="num">Втрач. GMV</th><th class="num">% від усіх втрат</th></tr></thead>
+        <tbody><tr><td><b>VARUS</b></td><td class="num">1 082</td><td class="num" style="color:#991b1b;font-weight:700">€13 311</td><td class="num">19.9%</td></tr><tr><td><b>BEER MARKET</b></td><td class="num">1 231</td><td class="num" style="color:#991b1b;font-weight:700">€12 782</td><td class="num">19.1%</td></tr><tr><td><b>RUKAVYCHKA</b></td><td class="num">206</td><td class="num" style="color:#991b1b;font-weight:700">€3 326</td><td class="num">5.0%</td></tr><tr><td><b>LOKO</b></td><td class="num">211</td><td class="num" style="color:#991b1b;font-weight:700">€3 316</td><td class="num">5.0%</td></tr><tr><td><b>PYVNA BORODA</b></td><td class="num">286</td><td class="num" style="color:#991b1b;font-weight:700">€3 141</td><td class="num">4.7%</td></tr><tr><td><b>KOPIYKA</b></td><td class="num">252</td><td class="num" style="color:#991b1b;font-weight:700">€2 923</td><td class="num">4.4%</td></tr><tr><td><b>BEERLAND K</b></td><td class="num">232</td><td class="num" style="color:#991b1b;font-weight:700">€2 647</td><td class="num">4.0%</td></tr><tr><td><b>ANRI-PHARM</b></td><td class="num">239</td><td class="num" style="color:#991b1b;font-weight:700">€2 259</td><td class="num">3.4%</td></tr></tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- REASON MIX + HEATMAP -->
 <div class="section">
-  <h2>4. Причини фейлів та тижнева теплокарта</h2>
+  <h2>5. Причини фейлів та тижнева теплокарта</h2>
   <div class="grid-2">
     <div class="card">
       <h3>Розподіл причин (топ-15, 4 455 фейлів)</h3>
@@ -328,16 +375,16 @@ tr:hover{background:#f9fafb}
 
 <!-- PER PARTNER REASON -->
 <div class="section">
-  <h2>5. Структура причин по кожному партнеру</h2>
+  <h2>6. Структура причин по кожному партнеру</h2>
   <div class="card">
-    <div class="store-row"><div class="store-name" title="BEER MARKET">BEER MARKET <b style="color:#111">1231</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:38.8%;background:#dc2626" title="Партнер відхилив: 478 (39%)">39%</div><div class="bar-fill" style="width:43.1%;background:#ea580c" title="Партнер не відповів (тайм-аут): 530 (43%)">43%</div><div class="bar-fill" style="width:5.8%;background:#f59e0b" title="Партнер не прийняв (інше): 71 (6%)"></div><div class="bar-fill" style="width:2.4%;background:#2563eb" title="Клієнт скасував: 29 (2%)"></div><div class="bar-fill" style="width:6.0%;background:#6b7280" title="Система / оплата / інше: 74 (6%)"></div></div></div><div class="store-row"><div class="store-name" title="VARUS">VARUS <b style="color:#111">1082</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:5.2%;background:#ea580c" title="Партнер не відповів (тайм-аут): 56 (5%)"></div><div class="bar-fill" style="width:1.0%;background:#f59e0b" title="Партнер не прийняв (інше): 11 (1%)"></div><div class="bar-fill" style="width:27.5%;background:#2563eb" title="Клієнт скасував: 298 (28%)">28%</div><div class="bar-fill" style="width:37.9%;background:#6b7280" title="Система / оплата / інше: 410 (38%)">38%</div></div></div><div class="store-row"><div class="store-name" title="PYVNA BORODA">PYVNA BORODA <b style="color:#111">286</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:84.3%;background:#dc2626" title="Партнер відхилив: 241 (84%)">84%</div><div class="bar-fill" style="width:1.7%;background:#ea580c" title="Партнер не відповів (тайм-аут): 5 (2%)"></div><div class="bar-fill" style="width:5.2%;background:#f59e0b" title="Партнер не прийняв (інше): 15 (5%)"></div><div class="bar-fill" style="width:1.0%;background:#2563eb" title="Клієнт скасував: 3 (1%)"></div><div class="bar-fill" style="width:6.3%;background:#6b7280" title="Система / оплата / інше: 18 (6%)"></div></div></div><div class="store-row"><div class="store-name" title="KOPIYKA">KOPIYKA <b style="color:#111">252</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:19.8%;background:#ea580c" title="Партнер не відповів (тайм-аут): 50 (20%)">20%</div><div class="bar-fill" style="width:5.2%;background:#f59e0b" title="Партнер не прийняв (інше): 13 (5%)"></div><div class="bar-fill" style="width:25.4%;background:#2563eb" title="Клієнт скасував: 64 (25%)">25%</div><div class="bar-fill" style="width:29.4%;background:#6b7280" title="Система / оплата / інше: 74 (29%)">29%</div></div></div><div class="store-row"><div class="store-name" title="ANRI-PHARM">ANRI-PHARM <b style="color:#111">239</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:7.1%;background:#ea580c" title="Партнер не відповів (тайм-аут): 17 (7%)"></div><div class="bar-fill" style="width:8.8%;background:#f59e0b" title="Партнер не прийняв (інше): 21 (9%)">9%</div><div class="bar-fill" style="width:8.4%;background:#2563eb" title="Клієнт скасував: 20 (8%)">8%</div><div class="bar-fill" style="width:46.4%;background:#6b7280" title="Система / оплата / інше: 111 (46%)">46%</div></div></div><div class="store-row"><div class="store-name" title="BEERLAND K">BEERLAND K <b style="color:#111">232</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:33.6%;background:#dc2626" title="Партнер відхилив: 78 (34%)">34%</div><div class="bar-fill" style="width:42.7%;background:#ea580c" title="Партнер не відповів (тайм-аут): 99 (43%)">43%</div><div class="bar-fill" style="width:6.5%;background:#f59e0b" title="Партнер не прийняв (інше): 15 (6%)"></div><div class="bar-fill" style="width:4.7%;background:#2563eb" title="Клієнт скасував: 11 (5%)"></div><div class="bar-fill" style="width:9.1%;background:#6b7280" title="Система / оплата / інше: 21 (9%)">9%</div></div></div><div class="store-row"><div class="store-name" title="HOP HEY">HOP HEY <b style="color:#111">212</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:12.3%;background:#ea580c" title="Партнер не відповів (тайм-аут): 26 (12%)">12%</div><div class="bar-fill" style="width:1.9%;background:#f59e0b" title="Партнер не прийняв (інше): 4 (2%)"></div><div class="bar-fill" style="width:19.8%;background:#2563eb" title="Клієнт скасував: 42 (20%)">20%</div><div class="bar-fill" style="width:32.5%;background:#6b7280" title="Система / оплата / інше: 69 (33%)">33%</div></div></div><div class="store-row"><div class="store-name" title="LOKO">LOKO <b style="color:#111">211</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:52.1%;background:#ea580c" title="Партнер не відповів (тайм-аут): 110 (52%)">52%</div><div class="bar-fill" style="width:1.9%;background:#f59e0b" title="Партнер не прийняв (інше): 4 (2%)"></div><div class="bar-fill" style="width:11.8%;background:#2563eb" title="Клієнт скасував: 25 (12%)">12%</div><div class="bar-fill" style="width:34.1%;background:#6b7280" title="Система / оплата / інше: 72 (34%)">34%</div></div></div><div class="store-row"><div class="store-name" title="RUKAVYCHKA">RUKAVYCHKA <b style="color:#111">206</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:4.9%;background:#dc2626" title="Партнер відхилив: 10 (5%)"></div><div class="bar-fill" style="width:58.7%;background:#ea580c" title="Партнер не відповів (тайм-аут): 121 (59%)">59%</div><div class="bar-fill" style="width:13.6%;background:#f59e0b" title="Партнер не прийняв (інше): 28 (14%)">14%</div><div class="bar-fill" style="width:9.7%;background:#2563eb" title="Клієнт скасував: 20 (10%)">10%</div><div class="bar-fill" style="width:10.7%;background:#6b7280" title="Система / оплата / інше: 22 (11%)">11%</div></div></div><div class="store-row"><div class="store-name" title="TAISTRA">TAISTRA <b style="color:#111">151</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:2.6%;background:#dc2626" title="Партнер відхилив: 4 (3%)"></div><div class="bar-fill" style="width:66.2%;background:#ea580c" title="Партнер не відповів (тайм-аут): 100 (66%)">66%</div><div class="bar-fill" style="width:11.3%;background:#f59e0b" title="Партнер не прийняв (інше): 17 (11%)">11%</div><div class="bar-fill" style="width:6.0%;background:#2563eb" title="Клієнт скасував: 9 (6%)"></div><div class="bar-fill" style="width:11.3%;background:#6b7280" title="Система / оплата / інше: 17 (11%)">11%</div></div></div><div class="store-row"><div class="store-name" title="REMESLO BREWERY">REMESLO BREWERY <b style="color:#111">76</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:30.3%;background:#dc2626" title="Партнер відхилив: 23 (30%)">30%</div><div class="bar-fill" style="width:50.0%;background:#ea580c" title="Партнер не відповів (тайм-аут): 38 (50%)">50%</div><div class="bar-fill" style="width:10.5%;background:#f59e0b" title="Партнер не прийняв (інше): 8 (11%)">11%</div><div class="bar-fill" style="width:5.3%;background:#2563eb" title="Клієнт скасував: 4 (5%)"></div><div class="bar-fill" style="width:2.6%;background:#6b7280" title="Система / оплата / інше: 2 (3%)"></div></div></div><div class="store-row"><div class="store-name" title="CAFE RYNOK">CAFE RYNOK <b style="color:#111">74</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:1.4%;background:#dc2626" title="Партнер відхилив: 1 (1%)"></div><div class="bar-fill" style="width:44.6%;background:#ea580c" title="Партнер не відповів (тайм-аут): 33 (45%)">45%</div><div class="bar-fill" style="width:20.3%;background:#f59e0b" title="Партнер не прийняв (інше): 15 (20%)">20%</div><div class="bar-fill" style="width:8.1%;background:#2563eb" title="Клієнт скасував: 6 (8%)">8%</div><div class="bar-fill" style="width:20.3%;background:#6b7280" title="Система / оплата / інше: 15 (20%)">20%</div></div></div><div class="store-row"><div class="store-name" title="RODYNNA KOVBASKA">RODYNNA KOVBASKA <b style="color:#111">73</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:27.4%;background:#dc2626" title="Партнер відхилив: 20 (27%)">27%</div><div class="bar-fill" style="width:49.3%;background:#ea580c" title="Партнер не відповів (тайм-аут): 36 (49%)">49%</div><div class="bar-fill" style="width:6.8%;background:#f59e0b" title="Партнер не прийняв (інше): 5 (7%)"></div><div class="bar-fill" style="width:8.2%;background:#2563eb" title="Клієнт скасував: 6 (8%)">8%</div><div class="bar-fill" style="width:6.8%;background:#6b7280" title="Система / оплата / інше: 5 (7%)"></div></div></div><div class="store-row"><div class="store-name" title="VAPERY | VAPE SHOP">VAPERY | VAPE SHOP <b style="color:#111">72</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:31.9%;background:#dc2626" title="Партнер відхилив: 23 (32%)">32%</div><div class="bar-fill" style="width:54.2%;background:#ea580c" title="Партнер не відповів (тайм-аут): 39 (54%)">54%</div><div class="bar-fill" style="width:6.9%;background:#f59e0b" title="Партнер не прийняв (інше): 5 (7%)"></div><div class="bar-fill" style="width:1.4%;background:#2563eb" title="Клієнт скасував: 1 (1%)"></div><div class="bar-fill" style="width:2.8%;background:#6b7280" title="Система / оплата / інше: 2 (3%)"></div></div></div><div class="store-row"><div class="store-name" title="SPRAGA">SPRAGA <b style="color:#111">58</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:62.1%;background:#dc2626" title="Партнер відхилив: 36 (62%)">62%</div><div class="bar-fill" style="width:15.5%;background:#ea580c" title="Партнер не відповів (тайм-аут): 9 (16%)">16%</div><div class="bar-fill" style="width:6.9%;background:#f59e0b" title="Партнер не прийняв (інше): 4 (7%)"></div><div class="bar-fill" style="width:3.4%;background:#2563eb" title="Клієнт скасував: 2 (3%)"></div><div class="bar-fill" style="width:10.3%;background:#6b7280" title="Система / оплата / інше: 6 (10%)">10%</div></div></div>
-    <div class="legend"><span><span class="dot" style="background:#dc2626"></span>Партнер відхилив</span><span><span class="dot" style="background:#ea580c"></span>Партнер не відповів (тайм-аут)</span><span><span class="dot" style="background:#f59e0b"></span>Партнер не прийняв (інше)</span><span><span class="dot" style="background:#2563eb"></span>Клієнт скасував</span><span><span class="dot" style="background:#7c3aed"></span>Проблема з кур'єром</span><span><span class="dot" style="background:#6b7280"></span>Система / оплата / інше</span></div>
+    <div class="store-row"><div class="store-name" title="BEER MARKET">BEER MARKET <b style="color:#111">1231</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:38.8%;background:#dc2626" title="Партнер відхилив: 478 (39%)">39%</div><div class="bar-fill" style="width:43.1%;background:#ea580c" title="Партнер не відповів (тайм-аут): 530 (43%)">43%</div><div class="bar-fill" style="width:5.8%;background:#f59e0b" title="Партнер не прийняв (інше): 71 (6%)"></div><div class="bar-fill" style="width:2.4%;background:#2563eb" title="Клієнт скасував: 29 (2%)"></div><div class="bar-fill" style="width:4.0%;background:#7c3aed" title="Проблема з курʼєром: 49 (4%)"></div><div class="bar-fill" style="width:6.0%;background:#6b7280" title="Система / оплата / інше: 74 (6%)"></div></div></div><div class="store-row"><div class="store-name" title="VARUS">VARUS <b style="color:#111">1082</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:5.2%;background:#ea580c" title="Партнер не відповів (тайм-аут): 56 (5%)"></div><div class="bar-fill" style="width:1.0%;background:#f59e0b" title="Партнер не прийняв (інше): 11 (1%)"></div><div class="bar-fill" style="width:27.5%;background:#2563eb" title="Клієнт скасував: 298 (28%)">28%</div><div class="bar-fill" style="width:28.4%;background:#7c3aed" title="Проблема з курʼєром: 307 (28%)">28%</div><div class="bar-fill" style="width:37.9%;background:#6b7280" title="Система / оплата / інше: 410 (38%)">38%</div></div></div><div class="store-row"><div class="store-name" title="PYVNA BORODA">PYVNA BORODA <b style="color:#111">286</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:84.3%;background:#dc2626" title="Партнер відхилив: 241 (84%)">84%</div><div class="bar-fill" style="width:1.7%;background:#ea580c" title="Партнер не відповів (тайм-аут): 5 (2%)"></div><div class="bar-fill" style="width:5.2%;background:#f59e0b" title="Партнер не прийняв (інше): 15 (5%)"></div><div class="bar-fill" style="width:1.0%;background:#2563eb" title="Клієнт скасував: 3 (1%)"></div><div class="bar-fill" style="width:1.4%;background:#7c3aed" title="Проблема з курʼєром: 4 (1%)"></div><div class="bar-fill" style="width:6.3%;background:#6b7280" title="Система / оплата / інше: 18 (6%)"></div></div></div><div class="store-row"><div class="store-name" title="KOPIYKA">KOPIYKA <b style="color:#111">252</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:19.8%;background:#ea580c" title="Партнер не відповів (тайм-аут): 50 (20%)">20%</div><div class="bar-fill" style="width:5.2%;background:#f59e0b" title="Партнер не прийняв (інше): 13 (5%)"></div><div class="bar-fill" style="width:25.4%;background:#2563eb" title="Клієнт скасував: 64 (25%)">25%</div><div class="bar-fill" style="width:20.2%;background:#7c3aed" title="Проблема з курʼєром: 51 (20%)">20%</div><div class="bar-fill" style="width:29.4%;background:#6b7280" title="Система / оплата / інше: 74 (29%)">29%</div></div></div><div class="store-row"><div class="store-name" title="ANRI-PHARM">ANRI-PHARM <b style="color:#111">239</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:7.1%;background:#ea580c" title="Партнер не відповів (тайм-аут): 17 (7%)"></div><div class="bar-fill" style="width:8.8%;background:#f59e0b" title="Партнер не прийняв (інше): 21 (9%)">9%</div><div class="bar-fill" style="width:8.4%;background:#2563eb" title="Клієнт скасував: 20 (8%)">8%</div><div class="bar-fill" style="width:29.3%;background:#7c3aed" title="Проблема з курʼєром: 70 (29%)">29%</div><div class="bar-fill" style="width:46.4%;background:#6b7280" title="Система / оплата / інше: 111 (46%)">46%</div></div></div><div class="store-row"><div class="store-name" title="BEERLAND K">BEERLAND K <b style="color:#111">232</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:33.6%;background:#dc2626" title="Партнер відхилив: 78 (34%)">34%</div><div class="bar-fill" style="width:42.7%;background:#ea580c" title="Партнер не відповів (тайм-аут): 99 (43%)">43%</div><div class="bar-fill" style="width:6.5%;background:#f59e0b" title="Партнер не прийняв (інше): 15 (6%)"></div><div class="bar-fill" style="width:4.7%;background:#2563eb" title="Клієнт скасував: 11 (5%)"></div><div class="bar-fill" style="width:3.4%;background:#7c3aed" title="Проблема з курʼєром: 8 (3%)"></div><div class="bar-fill" style="width:9.1%;background:#6b7280" title="Система / оплата / інше: 21 (9%)">9%</div></div></div><div class="store-row"><div class="store-name" title="HOP HEY">HOP HEY <b style="color:#111">212</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:12.3%;background:#ea580c" title="Партнер не відповів (тайм-аут): 26 (12%)">12%</div><div class="bar-fill" style="width:1.9%;background:#f59e0b" title="Партнер не прийняв (інше): 4 (2%)"></div><div class="bar-fill" style="width:19.8%;background:#2563eb" title="Клієнт скасував: 42 (20%)">20%</div><div class="bar-fill" style="width:33.5%;background:#7c3aed" title="Проблема з курʼєром: 71 (33%)">33%</div><div class="bar-fill" style="width:32.5%;background:#6b7280" title="Система / оплата / інше: 69 (33%)">33%</div></div></div><div class="store-row"><div class="store-name" title="LOKO">LOKO <b style="color:#111">211</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:52.1%;background:#ea580c" title="Партнер не відповів (тайм-аут): 110 (52%)">52%</div><div class="bar-fill" style="width:1.9%;background:#f59e0b" title="Партнер не прийняв (інше): 4 (2%)"></div><div class="bar-fill" style="width:11.8%;background:#2563eb" title="Клієнт скасував: 25 (12%)">12%</div><div class="bar-fill" style="width:34.1%;background:#6b7280" title="Система / оплата / інше: 72 (34%)">34%</div></div></div><div class="store-row"><div class="store-name" title="RUKAVYCHKA">RUKAVYCHKA <b style="color:#111">206</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:4.9%;background:#dc2626" title="Партнер відхилив: 10 (5%)"></div><div class="bar-fill" style="width:58.7%;background:#ea580c" title="Партнер не відповів (тайм-аут): 121 (59%)">59%</div><div class="bar-fill" style="width:13.6%;background:#f59e0b" title="Партнер не прийняв (інше): 28 (14%)">14%</div><div class="bar-fill" style="width:9.7%;background:#2563eb" title="Клієнт скасував: 20 (10%)">10%</div><div class="bar-fill" style="width:2.4%;background:#7c3aed" title="Проблема з курʼєром: 5 (2%)"></div><div class="bar-fill" style="width:10.7%;background:#6b7280" title="Система / оплата / інше: 22 (11%)">11%</div></div></div><div class="store-row"><div class="store-name" title="TAISTRA">TAISTRA <b style="color:#111">151</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:2.6%;background:#dc2626" title="Партнер відхилив: 4 (3%)"></div><div class="bar-fill" style="width:66.2%;background:#ea580c" title="Партнер не відповів (тайм-аут): 100 (66%)">66%</div><div class="bar-fill" style="width:11.3%;background:#f59e0b" title="Партнер не прийняв (інше): 17 (11%)">11%</div><div class="bar-fill" style="width:6.0%;background:#2563eb" title="Клієнт скасував: 9 (6%)"></div><div class="bar-fill" style="width:2.6%;background:#7c3aed" title="Проблема з курʼєром: 4 (3%)"></div><div class="bar-fill" style="width:11.3%;background:#6b7280" title="Система / оплата / інше: 17 (11%)">11%</div></div></div><div class="store-row"><div class="store-name" title="REMESLO BREWERY">REMESLO BREWERY <b style="color:#111">76</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:30.3%;background:#dc2626" title="Партнер відхилив: 23 (30%)">30%</div><div class="bar-fill" style="width:50.0%;background:#ea580c" title="Партнер не відповів (тайм-аут): 38 (50%)">50%</div><div class="bar-fill" style="width:10.5%;background:#f59e0b" title="Партнер не прийняв (інше): 8 (11%)">11%</div><div class="bar-fill" style="width:5.3%;background:#2563eb" title="Клієнт скасував: 4 (5%)"></div><div class="bar-fill" style="width:1.3%;background:#7c3aed" title="Проблема з курʼєром: 1 (1%)"></div><div class="bar-fill" style="width:2.6%;background:#6b7280" title="Система / оплата / інше: 2 (3%)"></div></div></div><div class="store-row"><div class="store-name" title="CAFE RYNOK">CAFE RYNOK <b style="color:#111">74</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:1.4%;background:#dc2626" title="Партнер відхилив: 1 (1%)"></div><div class="bar-fill" style="width:44.6%;background:#ea580c" title="Партнер не відповів (тайм-аут): 33 (45%)">45%</div><div class="bar-fill" style="width:20.3%;background:#f59e0b" title="Партнер не прийняв (інше): 15 (20%)">20%</div><div class="bar-fill" style="width:8.1%;background:#2563eb" title="Клієнт скасував: 6 (8%)">8%</div><div class="bar-fill" style="width:5.4%;background:#7c3aed" title="Проблема з курʼєром: 4 (5%)"></div><div class="bar-fill" style="width:20.3%;background:#6b7280" title="Система / оплата / інше: 15 (20%)">20%</div></div></div><div class="store-row"><div class="store-name" title="RODYNNA KOVBASKA">RODYNNA KOVBASKA <b style="color:#111">73</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:27.4%;background:#dc2626" title="Партнер відхилив: 20 (27%)">27%</div><div class="bar-fill" style="width:49.3%;background:#ea580c" title="Партнер не відповів (тайм-аут): 36 (49%)">49%</div><div class="bar-fill" style="width:6.8%;background:#f59e0b" title="Партнер не прийняв (інше): 5 (7%)"></div><div class="bar-fill" style="width:8.2%;background:#2563eb" title="Клієнт скасував: 6 (8%)">8%</div><div class="bar-fill" style="width:1.4%;background:#7c3aed" title="Проблема з курʼєром: 1 (1%)"></div><div class="bar-fill" style="width:6.8%;background:#6b7280" title="Система / оплата / інше: 5 (7%)"></div></div></div><div class="store-row"><div class="store-name" title="VAPERY | VAPE SHOP">VAPERY | VAPE SHOP <b style="color:#111">72</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:31.9%;background:#dc2626" title="Партнер відхилив: 23 (32%)">32%</div><div class="bar-fill" style="width:54.2%;background:#ea580c" title="Партнер не відповів (тайм-аут): 39 (54%)">54%</div><div class="bar-fill" style="width:6.9%;background:#f59e0b" title="Партнер не прийняв (інше): 5 (7%)"></div><div class="bar-fill" style="width:1.4%;background:#2563eb" title="Клієнт скасував: 1 (1%)"></div><div class="bar-fill" style="width:2.8%;background:#7c3aed" title="Проблема з курʼєром: 2 (3%)"></div><div class="bar-fill" style="width:2.8%;background:#6b7280" title="Система / оплата / інше: 2 (3%)"></div></div></div><div class="store-row"><div class="store-name" title="SPRAGA">SPRAGA <b style="color:#111">58</b></div><div class="bar-bg" style="display:flex"><div class="bar-fill" style="width:62.1%;background:#dc2626" title="Партнер відхилив: 36 (62%)">62%</div><div class="bar-fill" style="width:15.5%;background:#ea580c" title="Партнер не відповів (тайм-аут): 9 (16%)">16%</div><div class="bar-fill" style="width:6.9%;background:#f59e0b" title="Партнер не прийняв (інше): 4 (7%)"></div><div class="bar-fill" style="width:3.4%;background:#2563eb" title="Клієнт скасував: 2 (3%)"></div><div class="bar-fill" style="width:1.7%;background:#7c3aed" title="Проблема з курʼєром: 1 (2%)"></div><div class="bar-fill" style="width:10.3%;background:#6b7280" title="Система / оплата / інше: 6 (10%)">10%</div></div></div>
+    <div class="legend"><span><span class="dot" style="background:#dc2626"></span>Партнер відхилив</span><span><span class="dot" style="background:#ea580c"></span>Партнер не відповів (тайм-аут)</span><span><span class="dot" style="background:#f59e0b"></span>Партнер не прийняв (інше)</span><span><span class="dot" style="background:#2563eb"></span>Клієнт скасував</span><span><span class="dot" style="background:#7c3aed"></span>Проблема з курʼєром</span><span><span class="dot" style="background:#6b7280"></span>Система / оплата / інше</span></div>
   </div>
 </div>
 
 <!-- WHAT HAPPENED -->
 <div class="section">
-  <h2>6. Що трапилось — розбір за тижнями</h2>
+  <h2>7. Що трапилось — розбір за тижнями</h2>
   <div class="grid-2">
     <div class="insight crit">
       <div class="insight-title">BEER MARKET — системний партнерський фейл</div>
@@ -364,30 +411,32 @@ tr:hover{background:#f9fafb}
 
 <!-- STORES -->
 <div class="section">
-  <h2>7. Топ точок-порушників (у межах топ-15 партнерів)</h2>
+  <h2>8. Топ точок-порушників (у межах топ-15 партнерів)</h2>
   <div class="card">
     <table>
       <thead><tr><th>Партнер</th><th>Точка</th><th>Місто</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th></tr></thead>
-      <tbody><tr><td><b>VARUS</b></td><td>VARUS  вул. Лесі Українки 30</td><td>Kyiv</td><td class="num">386</td><td class="num"><b>99</b></td><td class="num"><span class="badge badge-r">25.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Васильківска 34</td><td>Kyiv</td><td class="num">636</td><td class="num"><b>74</b></td><td class="num"><span class="badge badge-y">11.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул. Тютюника 39-А</td><td>Kyiv</td><td class="num">615</td><td class="num"><b>71</b></td><td class="num"><span class="badge badge-y">11.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  бул. Європейський 1Д</td><td>Dnipro</td><td class="num">514</td><td class="num"><b>52</b></td><td class="num"><span class="badge badge-y">10.1%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Замарстинівська  43</td><td>Lviv</td><td class="num">660</td><td class="num"><b>48</b></td><td class="num"><span class="badge badge-y">7.3%</span></td></tr><tr><td><b>BEERLAND K</b></td><td>BEERLAND вул.Татарська</td><td>Kyiv</td><td class="num">209</td><td class="num"><b>47</b></td><td class="num"><span class="badge badge-r">22.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Андрія Малишко 3</td><td>Kyiv</td><td class="num">672</td><td class="num"><b>45</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Вишгородска 45а</td><td>Kyiv</td><td class="num">556</td><td class="num"><b>44</b></td><td class="num"><span class="badge badge-y">7.9%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Глинки 2</td><td>Dnipro</td><td class="num">554</td><td class="num"><b>37</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>KOPIYKA</b></td><td>Копійка вул. Асташкіна  29</td><td>Odesa</td><td class="num">124</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">28.2%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  пр. Олександра Поля  104</td><td>Dnipro</td><td class="num">283</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">12.4%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Шпитальна  1</td><td>Lviv</td><td class="num">161</td><td class="num"><b>33</b></td><td class="num"><span class="badge badge-r">20.5%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Незалежності</td><td>Ivano-Frankivsk</td><td class="num">104</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-r">30.8%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Наукова  51</td><td>Lviv</td><td class="num">410</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-y">7.8%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Героїв Майдану  226А</td><td>Chernivtsi</td><td class="num">705</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-g">4.5%</span></td></tr></tbody>
+      <tbody><tr><td><b>VARUS</b></td><td>VARUS  вул. Лесі Українки 30</td><td>Kyiv</td><td class="num">386</td><td class="num"><b>99</b></td><td class="num"><span class="badge badge-r">25.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Васильківска 34</td><td>Kyiv</td><td class="num">636</td><td class="num"><b>74</b></td><td class="num"><span class="badge badge-y">11.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул. Тютюника 39-А</td><td>Kyiv</td><td class="num">615</td><td class="num"><b>71</b></td><td class="num"><span class="badge badge-y">11.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  бул. Європейський 1Д</td><td>Dnipro</td><td class="num">514</td><td class="num"><b>52</b></td><td class="num"><span class="badge badge-y">10.1%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Замарстинівська  43</td><td>Lviv</td><td class="num">660</td><td class="num"><b>48</b></td><td class="num"><span class="badge badge-y">7.3%</span></td></tr><tr><td><b>BEERLAND K</b></td><td>BEERLAND вул.Татарська</td><td>Kyiv</td><td class="num">209</td><td class="num"><b>47</b></td><td class="num"><span class="badge badge-r">22.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Андрія Малишко 3</td><td>Kyiv</td><td class="num">672</td><td class="num"><b>45</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Вишгородска 45а</td><td>Kyiv</td><td class="num">556</td><td class="num"><b>44</b></td><td class="num"><span class="badge badge-y">7.9%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Глинки 2</td><td>Dnipro</td><td class="num">554</td><td class="num"><b>37</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>KOPIYKA</b></td><td>Копійка вул. Асташкіна  29</td><td>Odesa</td><td class="num">124</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">28.2%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  пр. Олександра Поля  104</td><td>Dnipro</td><td class="num">283</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">12.4%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Шпитальна  1</td><td>Lviv</td><td class="num">161</td><td class="num"><b>33</b></td><td class="num"><span class="badge badge-r">20.5%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Наукова  51</td><td>Lviv</td><td class="num">410</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-y">7.8%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Незалежності</td><td>Ivano-Frankivsk</td><td class="num">104</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-r">30.8%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Героїв Майдану  226А</td><td>Chernivtsi</td><td class="num">705</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-g">4.5%</span></td></tr></tbody>
     </table>
   </div>
 </div>
 
 <!-- METHOD -->
 <div class="section">
-  <h2>8. Методологія та пояснення розрахунку (dbx)</h2>
+  <h2>9. Методологія та пояснення розрахунку (dbx)</h2>
   <div class="method">
     <h3>Джерело даних</h3>
     <p>Databricks (профіль <code>bolt-common</code>), таблиця фактів замовлень <code>hive_metastore.ng_delivery_spark.fact_order_delivery</code>, зджойнена з <code>dim_provider_v2</code> по <code>provider_id</code>. Фільтр: <code>country_code='ua'</code>, <code>delivery_vertical LIKE 'store%'</code>, період <code>order_created_date</code> 11.05–12.07.2026.</p>
     <h3 style="margin-top:14px">Що вважаємо "failed"</h3>
-    <p><b>Failed order = </b><code>order_state IN ('failed','rejected')</code>. Знаменник fail-rate = усі створені замовлення (<code>delivered + failed + rejected</code> + рідкісні waiting). Розподіл станів за 60 днів: delivered 70 631 · rejected 2 662 · failed 2 541.</p>
+    <p><b>Failed order = </b><code>order_state IN ('failed','rejected')</code>. Знаменник fail-rate = усі створені замовлення (<code>delivered + failed + rejected</code> + рідкісні waiting).</p>
+    <h3 style="margin-top:14px">Втрачений GMV</h3>
+    <p><b>Lost GMV = </b><code>SUM(order_gmv_eur)</code> по рядках зі станом failed/rejected. Поле заповнене на 100% таких рядків (це вартість кошика на момент оформлення), тому оцінка пряма. Крос-валідація через <code>failed_cnt × AOV</code> партнера дала розбіжність &lt;5%. «Партнерські причини» = сума GMV по причинах відхилив / не відповів / не прийняв — найбільш поверненна частина.</p>
     <h3 style="margin-top:14px">Класифікація причин (пріоритетна, взаємовиключна)</h3>
     <p>У таблиці немає текстового поля причини, тому причина реконструйована з булевих прапорців у пріоритеті зверху вниз:</p>
     <p>1. <code>is_rejected_by_provider</code> → <b>Партнер відхилив</b><br>
     2. <code>is_not_responded_by_provider</code> → <b>Партнер не відповів (тайм-аут)</b><br>
     3. <code>is_order_not_accepted_by_provider</code> → <b>Партнер не прийняв (інше)</b><br>
     4. <code>has_eater_cancellation_ticket</code> → <b>Клієнт скасував</b><br>
-    5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з кур'єром</b><br>
+    5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з курʼєром</b><br>
     6. інакше → <b>Система / оплата / інше</b></p>
     <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 29.06 (лише 29–30.06) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
   </div>
@@ -398,7 +447,7 @@ tr:hover{background:#f9fafb}
 </div>
 
 <script>
-const D={"weeks": ["04.27", "05.04", "05.11", "05.18", "05.25", "06.01", "06.08", "06.15", "06.22", "06.29"], "ow_failed": [265, 687, 575, 586, 556, 615, 717, 632, 578, 159], "ow_rate": [6.83, 8.13, 7.16, 7.59, 6.96, 7.23, 7.75, 6.94, 6.42, 6.22], "reasons": ["Партнер відхилив", "Партнер не відповів (тайм-аут)", "Партнер не прийняв (інше)", "Клієнт скасував", "Проблема з кур'єром", "Система / оплата / інше"], "rcolors": ["#dc2626", "#ea580c", "#f59e0b", "#2563eb", "#7c3aed", "#6b7280"], "rtot": [914, 1269, 236, 540, 0, 918], "rweek": [[31, 117, 93, 106, 112, 104, 141, 104, 84, 22], [65, 181, 139, 131, 113, 154, 150, 160, 148, 28], [6, 21, 31, 27, 27, 27, 34, 30, 25, 8], [38, 70, 60, 58, 52, 52, 78, 73, 40, 19], [0, 0, 0, 0, 0, 0, 0, 0, 0, 0], [61, 111, 94, 96, 94, 109, 124, 103, 90, 36]]};
+const D={"weeks": ["04.27", "05.04", "05.11", "05.18", "05.25", "06.01", "06.08", "06.15", "06.22", "06.29"], "ow_failed": [265, 687, 575, 586, 556, 615, 717, 632, 578, 159], "ow_rate": [6.83, 8.13, 7.16, 7.59, 6.96, 7.23, 7.75, 6.94, 6.42, 6.22], "ow_lost": [3290, 8400, 7363, 7252, 6590, 7337, 8646, 8626, 7270, 2057], "reasons": ["Партнер відхилив", "Партнер не відповів (тайм-аут)", "Партнер не прийняв (інше)", "Клієнт скасував", "Проблема з курʼєром", "Система / оплата / інше"], "rcolors": ["#dc2626", "#ea580c", "#f59e0b", "#2563eb", "#7c3aed", "#6b7280"], "rtot": [914, 1269, 236, 540, 578, 918], "rweek": [[31, 117, 93, 106, 112, 104, 141, 104, 84, 22], [65, 181, 139, 131, 113, 154, 150, 160, 148, 28], [6, 21, 31, 27, 27, 27, 34, 30, 25, 8], [38, 70, 60, 58, 52, 52, 78, 73, 40, 19], [27, 83, 63, 70, 53, 80, 70, 60, 56, 16], [61, 111, 94, 96, 94, 109, 124, 103, 90, 36]]};
 const gridc='#eef1f4';
 new Chart(document.getElementById('chartTrend'),{
   data:{labels:D.weeks,datasets:[
@@ -408,6 +457,13 @@ new Chart(document.getElementById('chartTrend'),{
   options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
     scales:{y:{position:'left',title:{display:true,text:'ордери'},grid:{color:gridc}},
       y1:{position:'right',title:{display:true,text:'%'},grid:{drawOnChartArea:false},suggestedMax:10}}}
+});
+new Chart(document.getElementById('chartLost'),{
+  type:'bar',
+  data:{labels:D.weeks,datasets:[{label:'Втрачений GMV, €',data:D.ow_lost,backgroundColor:'#f87171',borderColor:'#dc2626',borderWidth:1}]},
+  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+    tooltip:{callbacks:{label:(c)=>'€'+c.parsed.y.toLocaleString('uk-UA')}}},
+    scales:{x:{grid:{display:false}},y:{grid:{color:gridc},ticks:{callback:(v)=>'€'+(v/1000)+'k'}}}}
 });
 new Chart(document.getElementById('chartReasonWeek'),{
   type:'bar',

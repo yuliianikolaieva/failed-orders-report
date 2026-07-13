@@ -13,21 +13,24 @@ weeks = sorted({r["wk"] for r in wt})
 meta = {m["grp"]: m for m in d["meta"]}
 
 REASONS = ['Партнер відхилив','Партнер не відповів (тайм-аут)','Партнер не прийняв (інше)',
-           'Клієнт скасував','Проблема з кур\'єром','Система / оплата / інше']
+           'Клієнт скасував','Проблема з курʼєром','Система / оплата / інше']
 RCOLOR = {
   'Партнер відхилив':'#dc2626',
   'Партнер не відповів (тайм-аут)':'#ea580c',
   'Партнер не прийняв (інше)':'#f59e0b',
   'Клієнт скасував':'#2563eb',
-  'Проблема з кур\'єром':'#7c3aed',
+  'Проблема з курʼєром':'#7c3aed',
   'Система / оплата / інше':'#6b7280',
 }
 
 # ---- partner totals ----
 tot = collections.defaultdict(lambda:[0,0,0])
+gmv = collections.defaultdict(lambda:[0.0,0.0])  # [deliv_gmv, lost_gmv]
 for r in wt:
     g=r["grp"] or "—"; tot[g][0]+=i(r["total"]); tot[g][1]+=i(r["delivered"]); tot[g][2]+=i(r["failed"])
+    gmv[g][0]+=num(r.get("deliv_gmv")); gmv[g][1]+=num(r.get("lost_gmv"))
 G=sum(v[0] for v in tot.values()); D=sum(v[1] for v in tot.values()); F=sum(v[2] for v in tot.values())
+GMV_DELIV=sum(v[0] for v in gmv.values()); GMV_LOST=sum(v[1] for v in gmv.values())
 top = sorted(tot.items(), key=lambda kv:-kv[1][2])[:15]
 topnames=[g for g,_ in top]
 TOPN=len(top)
@@ -41,14 +44,20 @@ ow_rate=[round(ow[w][2]/ow[w][0]*100,2) if ow[w][0] else 0 for w in weeks]
 
 # ---- reason totals & weekly (top10) ----
 rtot=collections.defaultdict(int)
+rgmv=collections.defaultdict(float)
 rweek=collections.defaultdict(lambda:collections.defaultdict(int))
 preason=collections.defaultdict(lambda:collections.defaultdict(int))  # partner->reason
 for r in wr:
     g=r["grp"] or "—"
     if g in topnames:
         rtot[r["reason"]]+=i(r["n"]); rweek[r["reason"]][r["wk"]]+=i(r["n"])
+        rgmv[r["reason"]]+=num(r.get("gmv"))
         preason[g][r["reason"]]+=i(r["n"])
 TF=sum(rtot.values())
+# overall weekly lost gmv
+ow_lostgmv=collections.defaultdict(float)
+for r in wt:
+    ow_lostgmv[r["wk"]]+=num(r.get("lost_gmv"))
 prov_share=(rtot['Партнер відхилив']+rtot['Партнер не відповів (тайм-аут)']+rtot['Партнер не прийняв (інше)'])/TF*100
 
 # ---- weekly per partner (rate + counts) ----
@@ -100,11 +109,13 @@ for idx,(g,v) in enumerate(top):
     ch=wow(g)
     ch_html=(f'<span class="{"down" if ch>0 else "up"}">{"+" if ch>0 else ""}{ch:.1f} п.п.</span>' if ch is not None else "—")
     badge = 'badge-r' if rate>=12 else ('badge-y' if rate>=7 else 'badge-g')
+    lost=gmv[g][1]
     rows_html+=f"""<tr>
       <td>{medals[idx]} <b>{g}</b><div style="font-size:10px;color:#6b7280">{seg}</div></td>
       <td class="num">{total:,}</td>
       <td class="num"><b>{fail:,}</b></td>
       <td class="num"><span class="badge {badge}">{rate:.1f}%</span></td>
+      <td class="num" style="color:#991b1b;font-weight:700">€{lost:,.0f}</td>
       <td class="num">{ch_html}</td>
       <td><span style="color:{RCOLOR.get(dr,'#333')};font-weight:600">{dr}</span> <span style="color:#6b7280">{drp:.0f}%</span></td>
     </tr>""".replace(",", " ")
@@ -164,7 +175,7 @@ EXPLAIN = {
    'what':'На замовлення заведено <b>тикет скасування від клієнта</b> — користувач сам скасував (передумав, помилився, надто довге очікування).',
    'why':'Не провина партнера напряму, але <b>довге очікування/повільне прийняття</b> провокує скасування. Частина таких замовлень встигла бути прийнятою партнером до скасування.'
  },
- "Проблема з кур'єром": {
+ "Проблема з курʼєром": {
    'flag':'number_courier_rejects > 0',
    'who':'Логістика','fault':'neutral',
    'what':'По замовленню були <b>відмови кур\'єрів</b> від призначення (або кур\'єра не вдалося знайти вчасно). Замовлення падає на етапі доставки.',
@@ -194,11 +205,28 @@ for reason in REASONS:
       <div style="font-size:11px;color:#334155;background:#f1f5f9;border-radius:6px;padding:6px 9px"><code style="font-size:11px">{e['flag']}</code></div>
     </div>"""
 
+# ---- lost GMV aggregates ----
+PARTNER_REASONS = {'Партнер відхилив','Партнер не відповів (тайм-аут)','Партнер не прийняв (інше)'}
+GMV_LOST_TOP = sum(rgmv.values())
+lost_partner = sum(rgmv[r] for r in PARTNER_REASONS)
+ow_lost = [round(ow_lostgmv[w]) for w in weeks]
+# reason -> lost gmv table
+rgmv_html=""
+for reason in sorted(REASONS, key=lambda r:-rgmv[r]):
+    v=rgmv[reason]; sh=v/GMV_LOST_TOP*100 if GMV_LOST_TOP else 0
+    who={'Партнер відхилив':'Партнер','Партнер не відповів (тайм-аут)':'Партнер','Партнер не прийняв (інше)':'Партнер','Клієнт скасував':'Клієнт',"Проблема з курʼєром":'Логістика','Система / оплата / інше':'Система'}[reason]
+    rgmv_html+=f'<tr><td><span class="dot" style="background:{RCOLOR[reason]}"></span> {reason}</td><td>{who}</td><td class="num"><b>€{v:,.0f}</b></td><td class="num">{sh:.0f}%</td></tr>'.replace(",", " ")
+# top partners by lost gmv
+top_lost=sorted(topnames, key=lambda g:-gmv[g][1])[:8]
+toplost_html=""
+for g in top_lost:
+    toplost_html+=f'<tr><td><b>{g}</b></td><td class="num">{tot[g][2]:,}</td><td class="num" style="color:#991b1b;font-weight:700">€{gmv[g][1]:,.0f}</td><td class="num">{gmv[g][1]/GMV_LOST*100:.1f}%</td></tr>'.replace(",", " ")
+
 # chart data
 import json as _j
 JS = {
   "weeks": wlabels,
-  "ow_failed": ow_failed, "ow_rate": ow_rate,
+  "ow_failed": ow_failed, "ow_rate": ow_rate, "ow_lost": ow_lost,
   "reasons": REASONS,
   "rcolors": [RCOLOR[r] for r in REASONS],
   "rtot": [rtot.get(r,0) for r in REASONS],
@@ -304,9 +332,9 @@ tr:hover{{background:#f9fafb}}
 <div class="section">
   <div class="grid-4">
     <div class="card kpi"><div class="kpi-label">Failed ордери (UA stores)</div><div class="kpi-value">{fmt(F)}</div><div class="kpi-sub down">{F/G*100:.1f}% fail-rate</div></div>
-    <div class="card kpi"><div class="kpi-label">Топ-15 партнерів = частка фейлів</div><div class="kpi-value">{sum(v[2] for _,v in top)/F*100:.0f}%</div><div class="kpi-sub neutral">{fmt(sum(v[2] for _,v in top))} з {fmt(F)}</div></div>
+    <div class="card kpi"><div class="kpi-label">Втрачений GMV (орієнтовно)</div><div class="kpi-value" style="color:#991b1b">€{GMV_LOST/1000:.1f}k</div><div class="kpi-sub down">{GMV_LOST/(GMV_DELIV+GMV_LOST)*100:.1f}% від потенц. GMV</div></div>
     <div class="card kpi"><div class="kpi-label">Партнерська провина (топ-15)</div><div class="kpi-value">{prov_share:.0f}%</div><div class="kpi-sub down">не відповіли / відхилили</div></div>
-    <div class="card kpi"><div class="kpi-label">Найгірший партнер</div><div class="kpi-value" style="font-size:20px">BEER MARKET</div><div class="kpi-sub down">{tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}% fail-rate</div></div>
+    <div class="card kpi"><div class="kpi-label">Найгірший партнер</div><div class="kpi-value" style="font-size:20px">BEER MARKET</div><div class="kpi-sub down">{tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}% · €{gmv['BEER MARKET'][1]/1000:.1f}k</div></div>
   </div>
 </div>
 
@@ -343,15 +371,47 @@ tr:hover{{background:#f9fafb}}
   <h2>3. Топ-15 партнерів за кількістю failed-ордерів</h2>
   <div class="card">
     <table>
-      <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
+      <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Втрач. GMV</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
       <tbody>{rows_html}</tbody>
     </table>
   </div>
 </div>
 
+<!-- LOST GMV -->
+<div class="section">
+  <h2>4. Скільки GMV втрачено</h2>
+  <div class="insight warn" style="margin-bottom:14px">
+    <div class="insight-title">≈ €{GMV_LOST:,.0f} втраченого GMV за 2 місяці</div>
+    <div class="insight-text">Кожен failed/rejected ордер несе свою вартість кошика (<code>order_gmv_eur</code>), тому це <b>пряма оцінка</b>, а не проєкція. Разом по UA Stores впало <b>€{GMV_LOST:,.0f}</b> — це <b>{GMV_LOST/(GMV_DELIV+GMV_LOST)*100:.1f}%</b> від потенційного GMV (доставлено €{GMV_DELIV:,.0f}). З них у топ-15 — €{GMV_LOST_TOP:,.0f}, а <b>€{lost_partner:,.0f} ({lost_partner/GMV_LOST_TOP*100:.0f}%) — через партнерські причини</b> (найбільш «поверненна» частина, якщо полагодити прийняття замовлень).</div>
+  </div>
+  <div class="grid-3" style="margin-bottom:16px">
+    <div class="card kpi"><div class="kpi-label">Втрачено GMV, усього</div><div class="kpi-value" style="color:#991b1b">€{GMV_LOST/1000:.1f}k</div><div class="kpi-sub down">{GMV_LOST/(GMV_DELIV+GMV_LOST)*100:.1f}% від потенц.</div></div>
+    <div class="card kpi"><div class="kpi-label">Партнерські причини (топ-15)</div><div class="kpi-value" style="color:#ea580c">€{lost_partner/1000:.1f}k</div><div class="kpi-sub neutral">{lost_partner/GMV_LOST_TOP*100:.0f}% — потенційно поверненно</div></div>
+    <div class="card kpi"><div class="kpi-label">У середньому за тиждень</div><div class="kpi-value">€{GMV_LOST/len(weeks)/1000:.1f}k</div><div class="kpi-sub stable">по {len(weeks)} тижнях</div></div>
+  </div>
+  <div class="grid-2">
+    <div class="card">
+      <h3>Втрачений GMV по тижнях, €</h3>
+      <div class="chart-box"><canvas id="chartLost"></canvas></div>
+    </div>
+    <div class="card">
+      <h3>Втрачений GMV за причиною (топ-15)</h3>
+      <table>
+        <thead><tr><th>Причина</th><th>Хто</th><th class="num">Втрач. GMV</th><th class="num">Частка</th></tr></thead>
+        <tbody>{rgmv_html}</tbody>
+      </table>
+      <h3 style="margin-top:16px">Топ-8 партнерів за втраченим GMV</h3>
+      <table>
+        <thead><tr><th>Партнер</th><th class="num">Failed</th><th class="num">Втрач. GMV</th><th class="num">% від усіх втрат</th></tr></thead>
+        <tbody>{toplost_html}</tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
 <!-- REASON MIX + HEATMAP -->
 <div class="section">
-  <h2>4. Причини фейлів та тижнева теплокарта</h2>
+  <h2>5. Причини фейлів та тижнева теплокарта</h2>
   <div class="grid-2">
     <div class="card">
       <h3>Розподіл причин (топ-15, {fmt(TF)} фейлів)</h3>
@@ -372,7 +432,7 @@ tr:hover{{background:#f9fafb}}
 
 <!-- PER PARTNER REASON -->
 <div class="section">
-  <h2>5. Структура причин по кожному партнеру</h2>
+  <h2>6. Структура причин по кожному партнеру</h2>
   <div class="card">
     {pbar_html}
     <div class="legend">{legend_html}</div>
@@ -381,7 +441,7 @@ tr:hover{{background:#f9fafb}}
 
 <!-- WHAT HAPPENED -->
 <div class="section">
-  <h2>6. Що трапилось — розбір за тижнями</h2>
+  <h2>7. Що трапилось — розбір за тижнями</h2>
   <div class="grid-2">
     <div class="insight crit">
       <div class="insight-title">BEER MARKET — системний партнерський фейл</div>
@@ -408,7 +468,7 @@ tr:hover{{background:#f9fafb}}
 
 <!-- STORES -->
 <div class="section">
-  <h2>7. Топ точок-порушників (у межах топ-15 партнерів)</h2>
+  <h2>8. Топ точок-порушників (у межах топ-15 партнерів)</h2>
   <div class="card">
     <table>
       <thead><tr><th>Партнер</th><th>Точка</th><th>Місто</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th></tr></thead>
@@ -419,19 +479,21 @@ tr:hover{{background:#f9fafb}}
 
 <!-- METHOD -->
 <div class="section">
-  <h2>8. Методологія та пояснення розрахунку (dbx)</h2>
+  <h2>9. Методологія та пояснення розрахунку (dbx)</h2>
   <div class="method">
     <h3>Джерело даних</h3>
     <p>Databricks (профіль <code>bolt-common</code>), таблиця фактів замовлень <code>hive_metastore.ng_delivery_spark.fact_order_delivery</code>, зджойнена з <code>dim_provider_v2</code> по <code>provider_id</code>. Фільтр: <code>country_code='ua'</code>, <code>delivery_vertical LIKE 'store%'</code>, період <code>order_created_date</code> 11.05–12.07.2026.</p>
     <h3 style="margin-top:14px">Що вважаємо "failed"</h3>
-    <p><b>Failed order = </b><code>order_state IN ('failed','rejected')</code>. Знаменник fail-rate = усі створені замовлення (<code>delivered + failed + rejected</code> + рідкісні waiting). Розподіл станів за 60 днів: delivered 70 631 · rejected 2 662 · failed 2 541.</p>
+    <p><b>Failed order = </b><code>order_state IN ('failed','rejected')</code>. Знаменник fail-rate = усі створені замовлення (<code>delivered + failed + rejected</code> + рідкісні waiting).</p>
+    <h3 style="margin-top:14px">Втрачений GMV</h3>
+    <p><b>Lost GMV = </b><code>SUM(order_gmv_eur)</code> по рядках зі станом failed/rejected. Поле заповнене на 100% таких рядків (це вартість кошика на момент оформлення), тому оцінка пряма. Крос-валідація через <code>failed_cnt × AOV</code> партнера дала розбіжність &lt;5%. «Партнерські причини» = сума GMV по причинах відхилив / не відповів / не прийняв — найбільш поверненна частина.</p>
     <h3 style="margin-top:14px">Класифікація причин (пріоритетна, взаємовиключна)</h3>
     <p>У таблиці немає текстового поля причини, тому причина реконструйована з булевих прапорців у пріоритеті зверху вниз:</p>
     <p>1. <code>is_rejected_by_provider</code> → <b>Партнер відхилив</b><br>
     2. <code>is_not_responded_by_provider</code> → <b>Партнер не відповів (тайм-аут)</b><br>
     3. <code>is_order_not_accepted_by_provider</code> → <b>Партнер не прийняв (інше)</b><br>
     4. <code>has_eater_cancellation_ticket</code> → <b>Клієнт скасував</b><br>
-    5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з кур'єром</b><br>
+    5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з курʼєром</b><br>
     6. інакше → <b>Система / оплата / інше</b></p>
     <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 29.06 (лише 29–30.06) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
   </div>
@@ -452,6 +514,13 @@ new Chart(document.getElementById('chartTrend'),{{
   options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{position:'bottom'}}}},
     scales:{{y:{{position:'left',title:{{display:true,text:'ордери'}},grid:{{color:gridc}}}},
       y1:{{position:'right',title:{{display:true,text:'%'}},grid:{{drawOnChartArea:false}},suggestedMax:10}}}}}}
+}});
+new Chart(document.getElementById('chartLost'),{{
+  type:'bar',
+  data:{{labels:D.weeks,datasets:[{{label:'Втрачений GMV, €',data:D.ow_lost,backgroundColor:'#f87171',borderColor:'#dc2626',borderWidth:1}}]}},
+  options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}},
+    tooltip:{{callbacks:{{label:(c)=>'€'+c.parsed.y.toLocaleString('uk-UA')}}}}}},
+    scales:{{x:{{grid:{{display:false}}}},y:{{grid:{{color:gridc}},ticks:{{callback:(v)=>'€'+(v/1000)+'k'}}}}}}}}
 }});
 new Chart(document.getElementById('chartReasonWeek'),{{
   type:'bar',

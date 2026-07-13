@@ -18,7 +18,7 @@ CASE
   WHEN f.is_not_responded_by_provider THEN 'Партнер не відповів (тайм-аут)'
   WHEN f.is_order_not_accepted_by_provider THEN 'Партнер не прийняв (інше)'
   WHEN f.has_eater_cancellation_ticket THEN 'Клієнт скасував'
-  WHEN f.number_courier_rejects > 0 THEN 'Проблема з кур''єром'
+  WHEN f.number_courier_rejects > 0 THEN 'Проблема з курʼєром'
   ELSE 'Система / оплата / інше'
 END
 """
@@ -48,7 +48,9 @@ SELECT {GRP} AS grp,
   DATE_FORMAT(DATE_TRUNC('week', f.order_created_date),'yyyy-MM-dd') AS wk,
   COUNT(*) AS total,
   SUM(CASE WHEN f.order_state='delivered' THEN 1 ELSE 0 END) AS delivered,
-  SUM(CASE WHEN f.order_state IN ('failed','rejected') THEN 1 ELSE 0 END) AS failed
+  SUM(CASE WHEN f.order_state IN ('failed','rejected') THEN 1 ELSE 0 END) AS failed,
+  SUM(CASE WHEN f.order_state='delivered' THEN COALESCE(f.order_gmv_eur,0) ELSE 0 END) AS deliv_gmv,
+  SUM(CASE WHEN f.order_state IN ('failed','rejected') THEN COALESCE(f.order_gmv_eur,0) ELSE 0 END) AS lost_gmv
 {BASE}
 GROUP BY 1,2
 """)
@@ -61,7 +63,8 @@ c2, r2 = run_cols(f"""
 SELECT {GRP} AS grp,
   DATE_FORMAT(DATE_TRUNC('week', f.order_created_date),'yyyy-MM-dd') AS wk,
   {REASON} AS reason,
-  COUNT(*) AS n
+  COUNT(*) AS n,
+  SUM(COALESCE(f.order_gmv_eur,0)) AS gmv
 {BASE}
   AND f.order_state IN ('failed','rejected')
 GROUP BY 1,2,3
