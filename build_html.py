@@ -299,10 +299,22 @@ topbad=sorted(btot.items(),key=lambda kv:-kv[1][1])[:15]
 actor_tbl=""
 for a in actor_order:
     n=actor[a]; actor_tbl+=f'<tr><td><span class="dot" style="background:{ACTOR_COLOR[a]}"></span> {ACTOR_LABEL[a]}</td><td class="num"><b>{n:,}</b></td><td class="num">{n/BATT*100:.0f}%</td></tr>'.replace(",", " ")
-# theme table
+# theme table (з описом кожної теми)
+THEME_DESC={
+ "Запізнення / довга доставка":"Замовлення доставлене із запізненням: довге готування партнером, повільна доставка/помилка ETA курʼєра, довге призначення курʼєра або страва приїхала холодною.",
+ "Скасовано підтримкою / системою":"Замовлення позначене як bad через ручне скасування оператором підтримки (manually_failed_by_cs) або автоматичне скасування системою.",
+ "Партнер недоступний / не прийняв":"Партнер не відповів на замовлення, був зачинений, перевантажений або мав проблему з девайсом (did_not_respond, closed, too_many_orders, device_issue).",
+ "Відсутні / неправильні позиції":"Клієнт отримав не ті або не всі товари: відсутня позиція, неправильний товар, цілком інше замовлення, проігноровані примітки.",
+ "Немає товару (out of stock)":"Позиції не було в наявності на момент збору замовлення (items_out_of_stock).",
+ "Проблеми з курʼєром":"Дії/поведінка курʼєра: не знайшов клієнта, грубість, проблема зі здачею, не виходив на звʼязок.",
+ "Якість їжі / товару":"Зіпсований смак/запах, недо-/переготовано, прострочене, пошкоджене, сторонній предмет, не відповідає опису чи фото.",
+ "Оплата / ціна / питання":"Питання щодо ціни/розрахунку, подвійне списання, помилка в меню, питання по PIN/оплаті.",
+ "Не доставлено":"Замовлення так і не доставили клієнту (order_never_delivered).",
+ "Інше":"Інші або нерозпізнані причини.",
+}
 theme_tbl=""
 for t,n in sorted(th.items(),key=lambda kv:-kv[1]):
-    theme_tbl+=f'<tr><td><span class="dot" style="background:{THEME_COLOR.get(t,"#9ca3af")}"></span> {t}</td><td class="num"><b>{n:,}</b></td><td class="num">{n/TTH*100:.0f}%</td></tr>'.replace(",", " ")
+    theme_tbl+=f'<tr><td><span class="dot" style="background:{THEME_COLOR.get(t,"#9ca3af")}"></span> <b>{t}</b><div style="font-size:10.5px;color:#6b7280;margin-top:2px;line-height:1.4">{THEME_DESC.get(t,"")}</div></td><td class="num"><b>{n:,}</b></td><td class="num">{n/TTH*100:.0f}%</td></tr>'.replace(",", " ")
 # per-partner bad table + heatmap
 def bhcol(v):
     if v is None: return ("","-")
