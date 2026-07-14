@@ -58,8 +58,16 @@ tr:hover{background:#f9fafb}
 .method{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:20px 22px;font-size:12.5px}
 .method code{background:#1e293b;color:#7dd3fc;padding:1px 6px;border-radius:4px;font-size:11.5px}
 .method h3{color:#fff} .method b{color:#fff}
+.tabs{display:flex;gap:6px;margin-bottom:26px;border-bottom:2px solid var(--border);flex-wrap:wrap}
+.tab{appearance:none;background:none;border:none;padding:12px 20px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit;display:flex;align-items:center;gap:8px}
+.tab:hover{color:var(--text)}
+.tab.active{color:var(--accent-dark);border-bottom-color:var(--red)}
+.tab .cnt{font-size:11px;font-weight:700;background:#f1f5f9;color:#475569;border-radius:99px;padding:2px 8px}
+.tab.active .cnt{background:#fee2e2;color:#991b1b}
+.tabpane{display:none}
+.tabpane.active{display:block}
 @media(max-width:900px){.grid-2,.grid-3,.grid-4{grid-template-columns:1fr}}
-@media print{body{background:#fff}.card{box-shadow:none}.btn-pdf{display:none}}
+@media print{body{background:#fff}.card{box-shadow:none}.btn-pdf{display:none}.tab{display:none}.tabpane{display:block!important}}
 </style>
 </head>
 <body>
@@ -68,13 +76,13 @@ tr:hover{background:#f9fafb}
 <div class="header">
   <div class="logo-dot">✕</div>
   <div>
-    <h1>Failed Orders — тижневий розбір</h1>
-    <div class="subtitle">Bolt Food UA · Stores · Топ-15 партнерів за failed-ордерами · причини, пояснення та розбивка по тижнях</div>
+    <h1>Orders Health — тижневий розбір</h1>
+    <div class="subtitle">Bolt Food UA · Stores · Failed · Bad orders · Скарги · топ-15 партнерів, причини та тижнева динаміка</div>
   </div>
   <div class="report-meta">
     Період: 01.05 – 30.06.2026 (10 тижнів, 2 часткові)<br>
     Джерело: Databricks · <code>fact_order_delivery</code><br>
-    Сформовано: 13.07.2026
+    Сформовано: 14.07.2026
     <br>
     <button class="btn-pdf" onclick="downloadPDF()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -82,6 +90,14 @@ tr:hover{background:#f9fafb}
     </button>
   </div>
 </div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-failed" onclick="showTab('failed')">✕ Failed ордери <span class="cnt">5 370</span></button>
+  <button class="tab" id="tab-bad" onclick="showTab('bad')">⚠ Bad orders <span class="cnt">5 643</span></button>
+  <button class="tab" id="tab-comp" onclick="showTab('comp')">💬 Скарги <span class="cnt">3 295</span></button>
+</div>
+
+<div class="tabpane active" id="pane-failed">
 
 <!-- VERDICT -->
 <div class="section">
@@ -423,7 +439,7 @@ tr:hover{background:#f9fafb}
   <div class="card">
     <table>
       <thead><tr><th>Партнер</th><th>Точка</th><th>Місто</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th></tr></thead>
-      <tbody><tr><td><b>VARUS</b></td><td>VARUS  вул. Лесі Українки 30</td><td>Kyiv</td><td class="num">386</td><td class="num"><b>99</b></td><td class="num"><span class="badge badge-r">25.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Васильківска 34</td><td>Kyiv</td><td class="num">636</td><td class="num"><b>74</b></td><td class="num"><span class="badge badge-y">11.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул. Тютюника 39-А</td><td>Kyiv</td><td class="num">615</td><td class="num"><b>71</b></td><td class="num"><span class="badge badge-y">11.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  бул. Європейський 1Д</td><td>Dnipro</td><td class="num">514</td><td class="num"><b>52</b></td><td class="num"><span class="badge badge-y">10.1%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Замарстинівська  43</td><td>Lviv</td><td class="num">660</td><td class="num"><b>48</b></td><td class="num"><span class="badge badge-y">7.3%</span></td></tr><tr><td><b>BEERLAND K</b></td><td>BEERLAND вул.Татарська</td><td>Kyiv</td><td class="num">209</td><td class="num"><b>47</b></td><td class="num"><span class="badge badge-r">22.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Андрія Малишко 3</td><td>Kyiv</td><td class="num">672</td><td class="num"><b>45</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Вишгородска 45а</td><td>Kyiv</td><td class="num">556</td><td class="num"><b>44</b></td><td class="num"><span class="badge badge-y">7.9%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Глинки 2</td><td>Dnipro</td><td class="num">554</td><td class="num"><b>37</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>KOPIYKA</b></td><td>Копійка вул. Асташкіна  29</td><td>Odesa</td><td class="num">124</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">28.2%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  пр. Олександра Поля  104</td><td>Dnipro</td><td class="num">283</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">12.4%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Шпитальна  1</td><td>Lviv</td><td class="num">161</td><td class="num"><b>33</b></td><td class="num"><span class="badge badge-r">20.5%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Наукова  51</td><td>Lviv</td><td class="num">410</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-y">7.8%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Незалежності</td><td>Ivano-Frankivsk</td><td class="num">104</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-r">30.8%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Героїв Майдану  226А</td><td>Chernivtsi</td><td class="num">705</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-g">4.5%</span></td></tr></tbody>
+      <tbody><tr><td><b>VARUS</b></td><td>VARUS  вул. Лесі Українки 30</td><td>Kyiv</td><td class="num">386</td><td class="num"><b>99</b></td><td class="num"><span class="badge badge-r">25.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Васильківска 34</td><td>Kyiv</td><td class="num">636</td><td class="num"><b>74</b></td><td class="num"><span class="badge badge-y">11.6%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул. Тютюника 39-А</td><td>Kyiv</td><td class="num">615</td><td class="num"><b>71</b></td><td class="num"><span class="badge badge-y">11.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  бул. Європейський 1Д</td><td>Dnipro</td><td class="num">514</td><td class="num"><b>52</b></td><td class="num"><span class="badge badge-y">10.1%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Замарстинівська  43</td><td>Lviv</td><td class="num">660</td><td class="num"><b>48</b></td><td class="num"><span class="badge badge-y">7.3%</span></td></tr><tr><td><b>BEERLAND K</b></td><td>BEERLAND вул.Татарська</td><td>Kyiv</td><td class="num">209</td><td class="num"><b>47</b></td><td class="num"><span class="badge badge-r">22.5%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Андрія Малишко 3</td><td>Kyiv</td><td class="num">672</td><td class="num"><b>45</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Вишгородска 45а</td><td>Kyiv</td><td class="num">556</td><td class="num"><b>44</b></td><td class="num"><span class="badge badge-y">7.9%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  вул.Глинки 2</td><td>Dnipro</td><td class="num">554</td><td class="num"><b>37</b></td><td class="num"><span class="badge badge-g">6.7%</span></td></tr><tr><td><b>KOPIYKA</b></td><td>Копійка вул. Асташкіна  29</td><td>Odesa</td><td class="num">124</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">28.2%</span></td></tr><tr><td><b>VARUS</b></td><td>VARUS  пр. Олександра Поля  104</td><td>Dnipro</td><td class="num">283</td><td class="num"><b>35</b></td><td class="num"><span class="badge badge-r">12.4%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Шпитальна  1</td><td>Lviv</td><td class="num">161</td><td class="num"><b>33</b></td><td class="num"><span class="badge badge-r">20.5%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Незалежності</td><td>Ivano-Frankivsk</td><td class="num">104</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-r">30.8%</span></td></tr><tr><td><b>RUKAVYCHKA</b></td><td>Рукавичка Наукова  51</td><td>Lviv</td><td class="num">410</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-y">7.8%</span></td></tr><tr><td><b>TAISTRA</b></td><td>Тайстра вул. Героїв Майдану  226А</td><td>Chernivtsi</td><td class="num">705</td><td class="num"><b>32</b></td><td class="num"><span class="badge badge-g">4.5%</span></td></tr></tbody>
     </table>
   </div>
 </div>
@@ -450,44 +466,203 @@ tr:hover{background:#f9fafb}
   </div>
 </div>
 
-<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Failed Orders Deep-Dive · дані з Databricks станом на 13.07.2026</div>
+</div><!-- /pane-failed -->
+
+<!-- ============ BAD ORDERS TAB ============ -->
+<div class="tabpane" id="pane-bad">
+  <div class="section">
+    <div class="insight warn">
+      <div class="insight-title">Bad orders: 8.2% доставлених замовлень «зіпсовані» — і в 56% випадків винен партнер</div>
+      <div class="insight-text">Bad order — це <b>доставлене</b> замовлення, яке пішло не так (переважно <b>запізнення</b>, а також out-of-stock, відсутні позиції, якість). За період таких <b>5 643 з 69 130</b> (8.2%). Головна причина — <b>запізнення/довга доставка (37%)</b>. За винуватцем: партнер 56%, курʼєр 17%, ліквідність 14%.</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="grid-4">
+      <div class="card kpi"><div class="kpi-label">Bad orders</div><div class="kpi-value" style="color:#ea580c">5 643</div><div class="kpi-sub down">8.2% доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Запізнення &gt;10 хв</div><div class="kpi-value">10 339</div><div class="kpi-sub neutral">15.0% доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Провина партнера</div><div class="kpi-value">56%</div><div class="kpi-sub down">5 797 bad-ордерів</div></div>
+      <div class="card kpi"><div class="kpi-label">Низькі оцінки їжі (&le;3)</div><div class="kpi-value">1 568</div><div class="kpi-sub stable">за період</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>1. Хто винен та за що (attribution)</h2>
+    <div class="grid-2">
+      <div class="card"><h3>Винуватець bad-ордера</h3><div class="chart-box"><canvas id="chartActor"></canvas></div></div>
+      <div class="card"><h3>Причини bad-ордерів (теми)</h3>
+        <table><thead><tr><th>Причина</th><th class="num">К-сть</th><th class="num">Частка</th></tr></thead><tbody><tr><td><span class="dot" style="background:#ea580c"></span> Запізнення / довга доставка</td><td class="num"><b>3 830</b></td><td class="num">37%</td></tr><tr><td><span class="dot" style="background:#6b7280"></span> Скасовано підтримкою / системою</td><td class="num"><b>2 058</b></td><td class="num">20%</td></tr><tr><td><span class="dot" style="background:#dc2626"></span> Партнер недоступний / не прийняв</td><td class="num"><b>1 715</b></td><td class="num">17%</td></tr><tr><td><span class="dot" style="background:#7c3aed"></span> Відсутні / неправильні позиції</td><td class="num"><b>1 048</b></td><td class="num">10%</td></tr><tr><td><span class="dot" style="background:#f59e0b"></span> Немає товару (out of stock)</td><td class="num"><b>928</b></td><td class="num">9%</td></tr><tr><td><span class="dot" style="background:#0891b2"></span> Проблеми з курʼєром</td><td class="num"><b>303</b></td><td class="num">3%</td></tr><tr><td><span class="dot" style="background:#16a34a"></span> Якість їжі / товару</td><td class="num"><b>206</b></td><td class="num">2%</td></tr><tr><td><span class="dot" style="background:#2563eb"></span> Оплата / ціна / питання</td><td class="num"><b>132</b></td><td class="num">1%</td></tr><tr><td><span class="dot" style="background:#991b1b"></span> Не доставлено</td><td class="num"><b>110</b></td><td class="num">1%</td></tr><tr><td><span class="dot" style="background:#9ca3af"></span> Інше</td><td class="num"><b>25</b></td><td class="num">0%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>2. Динаміка по тижнях</h2>
+    <div class="grid-2">
+      <div class="card"><h3>Bad-order rate та кількість по тижнях</h3><div class="chart-box"><canvas id="chartBadTrend"></canvas></div></div>
+      <div class="card"><h3>Bad-ордери за винуватцем по тижнях</h3><div class="chart-box"><canvas id="chartActorWeek"></canvas></div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>3. Топ-15 партнерів за bad-ордерами</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Bad</th><th class="num">Bad-rate</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th></tr></thead>
+        <tbody><tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-15</td><td class="num" style="color:#fff;font-weight:700">48 856</td><td class="num" style="color:#fff;font-weight:700">4 925</td><td class="num"><span class="badge badge-r">10.1%</span></td><td class="num" style="color:#fff;font-weight:700">2 251</td><td class="num"><span class="badge badge-r">4.6%</span></td></tr><tr><td>🥇 <b>VARUS</b></td><td class="num">13 647</td><td class="num"><b>2 111</b></td><td class="num"><span class="badge badge-r">15.5%</span></td><td class="num">1 152</td><td class="num"><span class="badge badge-r">8.4%</span></td></tr><tr><td>🥈 <b>HOP HEY</b></td><td class="num">6 848</td><td class="num"><b>633</b></td><td class="num"><span class="badge badge-y">9.2%</span></td><td class="num">221</td><td class="num"><span class="badge badge-y">3.2%</span></td></tr><tr><td>🥉 <b>KOPIYKA</b></td><td class="num">4 354</td><td class="num"><b>527</b></td><td class="num"><span class="badge badge-r">12.1%</span></td><td class="num">231</td><td class="num"><span class="badge badge-y">5.3%</span></td></tr><tr><td> <b>BEER MARKET</b></td><td class="num">6 182</td><td class="num"><b>435</b></td><td class="num"><span class="badge badge-g">7.0%</span></td><td class="num">179</td><td class="num"><span class="badge badge-g">2.9%</span></td></tr><tr><td> <b>TAISTRA</b></td><td class="num">2 006</td><td class="num"><b>181</b></td><td class="num"><span class="badge badge-y">9.0%</span></td><td class="num">75</td><td class="num"><span class="badge badge-y">3.7%</span></td></tr><tr><td> <b>RUKAVYCHKA</b></td><td class="num">1 732</td><td class="num"><b>168</b></td><td class="num"><span class="badge badge-y">9.7%</span></td><td class="num">94</td><td class="num"><span class="badge badge-y">5.4%</span></td></tr><tr><td> <b>BEERLAND K</b></td><td class="num">2 030</td><td class="num"><b>155</b></td><td class="num"><span class="badge badge-g">7.6%</span></td><td class="num">59</td><td class="num"><span class="badge badge-g">2.9%</span></td></tr><tr><td> <b>PYVNA BORODA</b></td><td class="num">2 304</td><td class="num"><b>134</b></td><td class="num"><span class="badge badge-g">5.8%</span></td><td class="num">48</td><td class="num"><span class="badge badge-g">2.1%</span></td></tr><tr><td> <b>CAFE RYNOK</b></td><td class="num">2 891</td><td class="num"><b>125</b></td><td class="num"><span class="badge badge-g">4.3%</span></td><td class="num">43</td><td class="num"><span class="badge badge-g">1.5%</span></td></tr><tr><td> <b>LEPRUKON</b></td><td class="num">1 430</td><td class="num"><b>119</b></td><td class="num"><span class="badge badge-y">8.3%</span></td><td class="num">27</td><td class="num"><span class="badge badge-g">1.9%</span></td></tr><tr><td> <b>ANRI-PHARM</b></td><td class="num">604</td><td class="num"><b>91</b></td><td class="num"><span class="badge badge-r">15.1%</span></td><td class="num">52</td><td class="num"><span class="badge badge-r">8.6%</span></td></tr><tr><td> <b>REMESLO BREWERY</b></td><td class="num">1 988</td><td class="num"><b>86</b></td><td class="num"><span class="badge badge-g">4.3%</span></td><td class="num">26</td><td class="num"><span class="badge badge-g">1.3%</span></td></tr><tr><td> <b>TOCHKA</b></td><td class="num">1 084</td><td class="num"><b>58</b></td><td class="num"><span class="badge badge-g">5.4%</span></td><td class="num">15</td><td class="num"><span class="badge badge-g">1.4%</span></td></tr><tr><td> <b>SPRAGA</b></td><td class="num">968</td><td class="num"><b>57</b></td><td class="num"><span class="badge badge-g">5.9%</span></td><td class="num">12</td><td class="num"><span class="badge badge-g">1.2%</span></td></tr><tr><td> <b>DIMPYVA</b></td><td class="num">788</td><td class="num"><b>45</b></td><td class="num"><span class="badge badge-g">5.7%</span></td><td class="num">17</td><td class="num"><span class="badge badge-g">2.2%</span></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="section">
+    <h2>4. Bad-order rate по тижнях, % (теплокарта)</h2>
+    <div class="card"><div style="overflow-x:auto"><table>
+      <thead><tr><th>Партнер</th><th class="num">04.27</th><th class="num">05.04</th><th class="num">05.11</th><th class="num">05.18</th><th class="num">05.25</th><th class="num">06.01</th><th class="num">06.08</th><th class="num">06.15</th><th class="num">06.22</th><th class="num">06.29</th></tr></thead>
+      <tbody><tr><td style="white-space:nowrap"><b>VARUS</b></td><td class="num cell-crit">19.6%</td><td class="num cell-crit">20.6%</td><td class="num cell-crit">17.4%</td><td class="num cell-crit">15.4%</td><td class="num cell-crit">16.0%</td><td class="num cell-crit">18.8%</td><td class="num cell-crit">14.0%</td><td class="num cell-crit">12.9%</td><td class="num cell-warn">11.0%</td><td class="num cell-warn">9.4%</td></tr><tr><td style="white-space:nowrap"><b>HOP HEY</b></td><td class="num cell-warn">11.4%</td><td class="num cell-warn">10.8%</td><td class="num cell-warn">9.7%</td><td class="num cell-warn">9.0%</td><td class="num cell-warn">10.3%</td><td class="num cell-warn">9.4%</td><td class="num cell-warn">8.4%</td><td class="num ">7.3%</td><td class="num ">7.5%</td><td class="num cell-warn">11.4%</td></tr><tr><td style="white-space:nowrap"><b>KOPIYKA</b></td><td class="num cell-crit">12.9%</td><td class="num cell-crit">12.7%</td><td class="num cell-crit">13.7%</td><td class="num cell-crit">13.2%</td><td class="num cell-crit">13.5%</td><td class="num cell-warn">11.3%</td><td class="num cell-warn">9.0%</td><td class="num cell-warn">10.6%</td><td class="num cell-warn">11.7%</td><td class="num cell-crit">14.8%</td></tr><tr><td style="white-space:nowrap"><b>BEER MARKET</b></td><td class="num ">7.6%</td><td class="num ">6.6%</td><td class="num cell-warn">8.1%</td><td class="num cell-warn">8.0%</td><td class="num ">6.8%</td><td class="num ">7.2%</td><td class="num ">6.8%</td><td class="num ">5.4%</td><td class="num ">5.9%</td><td class="num cell-warn">9.6%</td></tr><tr><td style="white-space:nowrap"><b>TAISTRA</b></td><td class="num cell-warn">8.7%</td><td class="num cell-warn">11.9%</td><td class="num cell-crit">12.7%</td><td class="num cell-crit">13.7%</td><td class="num cell-warn">9.7%</td><td class="num cell-warn">9.1%</td><td class="num ">6.5%</td><td class="num cell-good">3.1%</td><td class="num ">5.3%</td><td class="num cell-warn">8.1%</td></tr><tr><td style="white-space:nowrap"><b>RUKAVYCHKA</b></td><td class="num cell-crit">15.1%</td><td class="num cell-crit">13.6%</td><td class="num ">7.0%</td><td class="num cell-crit">12.1%</td><td class="num cell-crit">13.2%</td><td class="num cell-warn">9.6%</td><td class="num ">7.1%</td><td class="num ">7.7%</td><td class="num ">6.4%</td><td class="num cell-good">4.9%</td></tr><tr><td style="white-space:nowrap"><b>BEERLAND K</b></td><td class="num cell-good">4.3%</td><td class="num cell-warn">11.4%</td><td class="num cell-warn">9.6%</td><td class="num cell-warn">11.2%</td><td class="num cell-warn">8.9%</td><td class="num cell-warn">8.1%</td><td class="num ">5.7%</td><td class="num ">7.3%</td><td class="num cell-good">4.3%</td><td class="num cell-good">3.5%</td></tr><tr><td style="white-space:nowrap"><b>PYVNA BORODA</b></td><td class="num cell-good">4.5%</td><td class="num ">6.4%</td><td class="num cell-good">4.6%</td><td class="num cell-warn">9.0%</td><td class="num ">6.1%</td><td class="num ">6.4%</td><td class="num cell-good">4.5%</td><td class="num ">6.0%</td><td class="num cell-good">4.6%</td><td class="num cell-good">4.6%</td></tr><tr><td style="white-space:nowrap"><b>CAFE RYNOK</b></td><td class="num ">7.4%</td><td class="num cell-good">3.6%</td><td class="num cell-good">3.8%</td><td class="num ">6.5%</td><td class="num cell-good">3.4%</td><td class="num cell-good">4.0%</td><td class="num cell-good">4.4%</td><td class="num cell-good">3.9%</td><td class="num cell-good">3.6%</td><td class="num ">5.3%</td></tr><tr><td style="white-space:nowrap"><b>LEPRUKON</b></td><td class="num ">5.1%</td><td class="num ">5.8%</td><td class="num cell-crit">14.2%</td><td class="num cell-warn">11.0%</td><td class="num cell-warn">10.5%</td><td class="num cell-warn">8.6%</td><td class="num cell-good">4.7%</td><td class="num ">5.9%</td><td class="num cell-warn">9.3%</td><td class="num cell-warn">9.7%</td></tr><tr><td style="white-space:nowrap"><b>ANRI-PHARM</b></td><td class="num ">-</td><td class="num ">-</td><td class="num ">-</td><td class="num cell-crit">53.8%</td><td class="num cell-crit">29.1%</td><td class="num cell-crit">17.3%</td><td class="num cell-crit">12.4%</td><td class="num cell-warn">9.8%</td><td class="num cell-warn">10.5%</td><td class="num cell-good">4.9%</td></tr><tr><td style="white-space:nowrap"><b>REMESLO BREWERY</b></td><td class="num cell-good">3.2%</td><td class="num cell-good">4.6%</td><td class="num ">6.8%</td><td class="num ">5.2%</td><td class="num ">6.4%</td><td class="num cell-good">3.8%</td><td class="num cell-good">2.7%</td><td class="num cell-good">3.9%</td><td class="num cell-good">3.5%</td><td class="num cell-good">2.7%</td></tr><tr><td style="white-space:nowrap"><b>TOCHKA</b></td><td class="num ">7.5%</td><td class="num ">5.4%</td><td class="num cell-warn">10.6%</td><td class="num cell-good">4.3%</td><td class="num cell-good">3.3%</td><td class="num cell-good">4.5%</td><td class="num cell-good">4.4%</td><td class="num ">5.2%</td><td class="num cell-good">4.9%</td><td class="num ">5.7%</td></tr><tr><td style="white-space:nowrap"><b>SPRAGA</b></td><td class="num cell-warn">8.5%</td><td class="num cell-good">3.6%</td><td class="num cell-warn">8.7%</td><td class="num ">8.0%</td><td class="num cell-warn">8.2%</td><td class="num ">5.3%</td><td class="num cell-good">3.8%</td><td class="num ">6.9%</td><td class="num cell-good">3.5%</td><td class="num cell-good">3.6%</td></tr><tr><td style="white-space:nowrap"><b>DIMPYVA</b></td><td class="num ">6.7%</td><td class="num ">5.1%</td><td class="num ">6.7%</td><td class="num cell-good">2.1%</td><td class="num ">7.9%</td><td class="num ">6.5%</td><td class="num cell-good">2.2%</td><td class="num cell-warn">9.1%</td><td class="num ">5.5%</td><td class="num ">7.1%</td></tr></tbody>
+    </table></div>
+    <div class="legend"><span><span class="dot" style="background:#dcfce7"></span>&lt;5%</span><span><span class="dot" style="background:#fef9c3"></span>8–12%</span><span><span class="dot" style="background:#fee2e2"></span>&ge;12%</span></div>
+    </div>
+  </div>
+</div><!-- /pane-bad -->
+
+<!-- ============ COMPLAINTS TAB ============ -->
+<div class="tabpane" id="pane-comp">
+  <div class="section">
+    <div class="insight" style="border-color:#2563eb;background:#eff6ff">
+      <div class="insight-title">Скарги: 3 295 звернень у підтримку (4.8% доставлених)</div>
+      <div class="insight-text">«Скарга» тут = замовлення зі зверненням у підтримку (<code>has_ticket</code>) + категорії, на що саме скаржаться клієнти (з attribution, eater-reported). Найчастіше клієнти скаржаться на <b>Відсутні / неправильні позиції</b>. Додатково 1 568 замовлень отримали <b>низьку оцінку їжі (&le;3)</b>.</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="grid-4">
+      <div class="card kpi"><div class="kpi-label">Скарги (тикети)</div><div class="kpi-value" style="color:#2563eb">3 295</div><div class="kpi-sub down">4.8% доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Категорій скарг (eater)</div><div class="kpi-value">2 523</div><div class="kpi-sub stable">issues attributed</div></div>
+      <div class="card kpi"><div class="kpi-label">Низькі оцінки їжі</div><div class="kpi-value">1 568</div><div class="kpi-sub neutral">рейтинг &le;3</div></div>
+      <div class="card kpi"><div class="kpi-label">Запізнення &gt;10 хв</div><div class="kpi-value">10 339</div><div class="kpi-sub neutral">15.0% доставлених</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>1. На що скаржаться клієнти</h2>
+    <div class="grid-2">
+      <div class="card"><h3>Категорії скарг (eater-reported)</h3><div class="chart-box"><canvas id="chartComp"></canvas></div></div>
+      <div class="card"><h3>Деталізація</h3>
+        <table><thead><tr><th>Категорія</th><th class="num">К-сть</th><th class="num">Частка</th></tr></thead><tbody><tr><td><span class="dot" style="background:#7c3aed"></span> Відсутні / неправильні позиції</td><td class="num"><b>1 048</b></td><td class="num">42%</td></tr><tr><td><span class="dot" style="background:#0891b2"></span> Проблеми з курʼєром</td><td class="num"><b>450</b></td><td class="num">18%</td></tr><tr><td><span class="dot" style="background:#9ca3af"></span> Інше</td><td class="num"><b>424</b></td><td class="num">17%</td></tr><tr><td><span class="dot" style="background:#16a34a"></span> Якість їжі / товару</td><td class="num"><b>214</b></td><td class="num">8%</td></tr><tr><td><span class="dot" style="background:#ea580c"></span> Довге очікування / запізнення</td><td class="num"><b>136</b></td><td class="num">5%</td></tr><tr><td><span class="dot" style="background:#2563eb"></span> Оплата / ціна / питання</td><td class="num"><b>132</b></td><td class="num">5%</td></tr><tr><td><span class="dot" style="background:#991b1b"></span> Не доставлено</td><td class="num"><b>119</b></td><td class="num">5%</td></tr></tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>2. Скарги по тижнях</h2>
+    <div class="card"><h3>Тикети та ticket-rate по тижнях</h3><div class="chart-box" style="height:280px"><canvas id="chartTicTrend"></canvas></div></div>
+  </div>
+  <div class="section">
+    <h2>3. Топ-15 партнерів за скаргами</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th></tr></thead>
+        <tbody><tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-15</td><td class="num" style="color:#fff;font-weight:700">56 331</td><td class="num" style="color:#fff;font-weight:700">3 010</td><td class="num"><span class="badge badge-r">5.3%</span></td></tr><tr><td>🥇 <b>VARUS</b></td><td class="num">13 647</td><td class="num"><b>1 152</b></td><td class="num"><span class="badge badge-r">8.4%</span></td></tr><tr><td>🥈 <b>LOKO</b></td><td class="num">8 852</td><td class="num"><b>767</b></td><td class="num"><span class="badge badge-r">8.7%</span></td></tr><tr><td>🥉 <b>KOPIYKA</b></td><td class="num">4 354</td><td class="num"><b>231</b></td><td class="num"><span class="badge badge-y">5.3%</span></td></tr><tr><td> <b>HOP HEY</b></td><td class="num">6 848</td><td class="num"><b>221</b></td><td class="num"><span class="badge badge-y">3.2%</span></td></tr><tr><td> <b>BEER MARKET</b></td><td class="num">6 182</td><td class="num"><b>179</b></td><td class="num"><span class="badge badge-g">2.9%</span></td></tr><tr><td> <b>RUKAVYCHKA</b></td><td class="num">1 732</td><td class="num"><b>94</b></td><td class="num"><span class="badge badge-y">5.4%</span></td></tr><tr><td> <b>TAISTRA</b></td><td class="num">2 006</td><td class="num"><b>75</b></td><td class="num"><span class="badge badge-y">3.7%</span></td></tr><tr><td> <b>BEERLAND K</b></td><td class="num">2 030</td><td class="num"><b>59</b></td><td class="num"><span class="badge badge-g">2.9%</span></td></tr><tr><td> <b>ANRI-PHARM</b></td><td class="num">604</td><td class="num"><b>52</b></td><td class="num"><span class="badge badge-r">8.6%</span></td></tr><tr><td> <b>PYVNA BORODA</b></td><td class="num">2 304</td><td class="num"><b>48</b></td><td class="num"><span class="badge badge-g">2.1%</span></td></tr><tr><td> <b>CAFE RYNOK</b></td><td class="num">2 891</td><td class="num"><b>43</b></td><td class="num"><span class="badge badge-g">1.5%</span></td></tr><tr><td> <b>LEPRUKON</b></td><td class="num">1 430</td><td class="num"><b>27</b></td><td class="num"><span class="badge badge-g">1.9%</span></td></tr><tr><td> <b>REMESLO BREWERY</b></td><td class="num">1 988</td><td class="num"><b>26</b></td><td class="num"><span class="badge badge-g">1.3%</span></td></tr><tr><td> <b>CHILL TIME</b></td><td class="num">675</td><td class="num"><b>19</b></td><td class="num"><span class="badge badge-g">2.8%</span></td></tr><tr><td> <b>DIMPYVA</b></td><td class="num">788</td><td class="num"><b>17</b></td><td class="num"><span class="badge badge-g">2.2%</span></td></tr></tbody>
+      </table>
+    </div>
+  </div>
+  <div class="section">
+    <div class="method">
+      <h3>Пояснення (dbx)</h3>
+      <p><b>Bad order</b> = <code>fact_order_delivery.is_bad_order = true</code> серед доставлених. Атрибуція винуватця й причини — з таблиці <code>int_order_bad_order_attribution</code> (<code>bad_order_actor_at_fault</code>, <code>bad_order_main_reason</code>), зджойнена по <code>order_id</code>. Причини згруповано в теми.</p>
+      <p style="margin-top:8px"><b>Скарга</b> = замовлення зі зверненням у підтримку <code>has_ticket = true</code>. Категорії скарг — з eater-reported причин attribution (<code>bad_order_main_reason LIKE '%eater%'</code>). Низька оцінка — <code>order_food_rating_value &le; 3</code>; запізнення — <code>is_order_delivered_10_min_late</code>.</p>
+    </div>
+  </div>
+</div><!-- /pane-comp -->
+
+<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги) · дані з Databricks станом на 14.07.2026</div>
 
 </div>
 
 <script>
-const D={"weeks": ["04.27", "05.04", "05.11", "05.18", "05.25", "06.01", "06.08", "06.15", "06.22", "06.29"], "ow_failed": [265, 687, 575, 586, 556, 615, 717, 632, 578, 159], "ow_rate": [6.83, 8.13, 7.16, 7.59, 6.96, 7.23, 7.75, 6.94, 6.42, 6.22], "ow_lost": [3290, 8400, 7363, 7252, 6590, 7337, 8646, 8626, 7270, 2057], "reasons": ["Партнер відхилив", "Партнер не відповів (тайм-аут)", "Партнер не прийняв (інше)", "Клієнт скасував", "Проблема з курʼєром", "Система / оплата / інше"], "rcolors": ["#dc2626", "#ea580c", "#f59e0b", "#2563eb", "#7c3aed", "#6b7280"], "rtot": [914, 1269, 236, 540, 578, 918], "rweek": [[31, 117, 93, 106, 112, 104, 141, 104, 84, 22], [65, 181, 139, 131, 113, 154, 150, 160, 148, 28], [6, 21, 31, 27, 27, 27, 34, 30, 25, 8], [38, 70, 60, 58, 52, 52, 78, 73, 40, 19], [27, 83, 63, 70, 53, 80, 70, 60, 56, 16], [61, 111, 94, 96, 94, 109, 124, 103, 90, 36]]};
+const D={"weeks": ["04.27", "05.04", "05.11", "05.18", "05.25", "06.01", "06.08", "06.15", "06.22", "06.29"], "bad_actor_labels": ["Партнер", "Курʼєр", "Ліквідність кур'єрів", "Клієнт", "Bolt (платформа)", "Невідомо"], "bad_actor_data": [5797, 1760, 1426, 1118, 93, 161], "bad_actor_colors": ["#dc2626", "#7c3aed", "#ea580c", "#2563eb", "#0891b2", "#9ca3af"], "bad_actor_week": [[277, 738, 608, 617, 627, 648, 733, 717, 656, 176], [112, 220, 216, 195, 182, 208, 185, 198, 194, 50], [56, 175, 200, 179, 172, 212, 139, 135, 109, 49], [59, 182, 147, 133, 128, 139, 115, 102, 86, 27], [7, 19, 15, 10, 9, 10, 6, 4, 9, 4], [3, 18, 20, 24, 25, 17, 16, 15, 17, 6]], "ow_bad": [284, 740, 695, 643, 652, 725, 583, 602, 553, 166], "ow_badrate": [7.86, 9.53, 9.32, 9.01, 8.77, 9.19, 6.83, 7.1, 6.56, 6.93], "ow_tic": [226, 481, 417, 348, 364, 358, 361, 312, 319, 109], "ow_ticrate": [6.26, 6.2, 5.59, 4.88, 4.89, 4.54, 4.23, 3.68, 3.79, 4.55], "comp_labels": ["Відсутні / неправильні позиції", "Проблеми з курʼєром", "Інше", "Якість їжі / товару", "Довге очікування / запізнення", "Оплата / ціна / питання", "Не доставлено"], "comp_data": [1048, 450, 424, 214, 136, 132, 119], "comp_colors": ["#7c3aed", "#0891b2", "#9ca3af", "#16a34a", "#ea580c", "#2563eb", "#991b1b"], "ow_failed": [265, 687, 575, 586, 556, 615, 717, 632, 578, 159], "ow_rate": [6.83, 8.13, 7.16, 7.59, 6.96, 7.23, 7.75, 6.94, 6.42, 6.22], "ow_lost": [3290, 8400, 7363, 7252, 6590, 7337, 8646, 8626, 7270, 2057], "reasons": ["Партнер відхилив", "Партнер не відповів (тайм-аут)", "Партнер не прийняв (інше)", "Клієнт скасував", "Проблема з курʼєром", "Система / оплата / інше"], "rcolors": ["#dc2626", "#ea580c", "#f59e0b", "#2563eb", "#7c3aed", "#6b7280"], "rtot": [914, 1269, 236, 540, 578, 918], "rweek": [[31, 117, 93, 106, 112, 104, 141, 104, 84, 22], [65, 181, 139, 131, 113, 154, 150, 160, 148, 28], [6, 21, 31, 27, 27, 27, 34, 30, 25, 8], [38, 70, 60, 58, 52, 52, 78, 73, 40, 19], [27, 83, 63, 70, 53, 80, 70, 60, 56, 16], [61, 111, 94, 96, 94, 109, 124, 103, 90, 36]]};
 const gridc='#eef1f4';
-new Chart(document.getElementById('chartTrend'),{
-  data:{labels:D.weeks,datasets:[
-    {type:'bar',label:'Failed ордери',data:D.ow_failed,backgroundColor:'#fca5a5',yAxisID:'y',order:2},
-    {type:'line',label:'Fail-rate %',data:D.ow_rate,borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.3,yAxisID:'y1',order:1,pointRadius:3}
-  ]},
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
-    scales:{y:{position:'left',title:{display:true,text:'ордери'},grid:{color:gridc}},
-      y1:{position:'right',title:{display:true,text:'%'},grid:{drawOnChartArea:false},suggestedMax:10}}}
-});
-new Chart(document.getElementById('chartLost'),{
-  type:'bar',
-  data:{labels:D.weeks,datasets:[{label:'Втрачений GMV, €',data:D.ow_lost,backgroundColor:'#f87171',borderColor:'#dc2626',borderWidth:1}]},
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
-    tooltip:{callbacks:{label:(c)=>'€'+c.parsed.y.toLocaleString('uk-UA')}}},
-    scales:{x:{grid:{display:false}},y:{grid:{color:gridc},ticks:{callback:(v)=>'€'+(v/1000)+'k'}}}}
-});
-new Chart(document.getElementById('chartReasonWeek'),{
-  type:'bar',
-  data:{labels:D.weeks,datasets:D.reasons.map((r,idx)=>({label:r,data:D.rweek[idx],backgroundColor:D.rcolors[idx]}))},
-  options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
-    scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:gridc}}}}
-});
-new Chart(document.getElementById('chartReasonMix'),{
-  type:'doughnut',
-  data:{labels:D.reasons,datasets:[{data:D.rtot,backgroundColor:D.rcolors,borderWidth:2,borderColor:'#fff'}]},
-  options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}
-});
+const pctY={grid:{drawOnChartArea:false},position:'right',title:{display:true,text:'%'}};
+const built={};
+
+function buildFailed(){
+  new Chart(document.getElementById('chartTrend'),{
+    data:{labels:D.weeks,datasets:[
+      {type:'bar',label:'Failed ордери',data:D.ow_failed,backgroundColor:'#fca5a5',yAxisID:'y',order:2},
+      {type:'line',label:'Fail-rate %',data:D.ow_rate,borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.3,yAxisID:'y1',order:1,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
+      scales:{y:{position:'left',title:{display:true,text:'ордери'},grid:{color:gridc}},
+        y1:{position:'right',title:{display:true,text:'%'},grid:{drawOnChartArea:false},suggestedMax:10}}}
+  });
+  new Chart(document.getElementById('chartLost'),{
+    type:'bar',
+    data:{labels:D.weeks,datasets:[{label:'Втрачений GMV, €',data:D.ow_lost,backgroundColor:'#f87171',borderColor:'#dc2626',borderWidth:1}]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false},
+      tooltip:{callbacks:{label:(c)=>'€'+c.parsed.y.toLocaleString('uk-UA')}}},
+      scales:{x:{grid:{display:false}},y:{grid:{color:gridc},ticks:{callback:(v)=>'€'+(v/1000)+'k'}}}}
+  });
+  new Chart(document.getElementById('chartReasonWeek'),{
+    type:'bar',
+    data:{labels:D.weeks,datasets:D.reasons.map((r,idx)=>({label:r,data:D.rweek[idx],backgroundColor:D.rcolors[idx]}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:false}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:gridc}}}}
+  });
+  new Chart(document.getElementById('chartReasonMix'),{
+    type:'doughnut',
+    data:{labels:D.reasons,datasets:[{data:D.rtot,backgroundColor:D.rcolors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}
+  });
+}
+
+function buildBad(){
+  new Chart(document.getElementById('chartActor'),{
+    type:'doughnut',
+    data:{labels:D.bad_actor_labels,datasets:[{data:D.bad_actor_data,backgroundColor:D.bad_actor_colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}
+  });
+  new Chart(document.getElementById('chartBadTrend'),{
+    data:{labels:D.weeks,datasets:[
+      {type:'bar',label:'Bad orders',data:D.ow_bad,backgroundColor:'#fdba74',yAxisID:'y',order:2},
+      {type:'line',label:'Bad-rate %',data:D.ow_badrate,borderColor:'#ea580c',backgroundColor:'#ea580c',tension:.3,yAxisID:'y1',order:1,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
+      scales:{y:{position:'left',grid:{color:gridc}},y1:{position:'right',grid:{drawOnChartArea:false},suggestedMax:20}}}
+  });
+  new Chart(document.getElementById('chartActorWeek'),{
+    type:'bar',
+    data:{labels:D.weeks,datasets:D.bad_actor_labels.map((l,idx)=>({label:l,data:D.bad_actor_week[idx],backgroundColor:D.bad_actor_colors[idx]}))},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom',labels:{boxWidth:11,font:{size:10}}}},
+      scales:{x:{stacked:true,grid:{display:false}},y:{stacked:true,grid:{color:gridc}}}}
+  });
+}
+
+function buildComp(){
+  new Chart(document.getElementById('chartComp'),{
+    type:'doughnut',
+    data:{labels:D.comp_labels,datasets:[{data:D.comp_data,backgroundColor:D.comp_colors,borderWidth:2,borderColor:'#fff'}]},
+    options:{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{legend:{position:'right',labels:{boxWidth:12,font:{size:11}}}}}
+  });
+  new Chart(document.getElementById('chartTicTrend'),{
+    data:{labels:D.weeks,datasets:[
+      {type:'bar',label:'Скарги (тикети)',data:D.ow_tic,backgroundColor:'#93c5fd',yAxisID:'y',order:2},
+      {type:'line',label:'Ticket-rate %',data:D.ow_ticrate,borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.3,yAxisID:'y1',order:1,pointRadius:3}
+    ]},
+    options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{position:'bottom'}},
+      scales:{y:{position:'left',grid:{color:gridc}},y1:{position:'right',grid:{drawOnChartArea:false},suggestedMax:10}}}
+  });
+}
+
+const BUILDERS={failed:buildFailed,bad:buildBad,comp:buildComp};
+function showTab(id){
+  ['failed','bad','comp'].forEach(t=>{
+    document.getElementById('pane-'+t).classList.toggle('active', t===id);
+    document.getElementById('tab-'+t).classList.toggle('active', t===id);
+  });
+  if(!built[id]){ BUILDERS[id](); built[id]=true; }
+}
+showTab('failed');
+
 function downloadPDF(){
+  ['failed','bad','comp'].forEach(t=>{ if(!built[t]){ BUILDERS[t](); built[t]=true; } document.getElementById('pane-'+t).classList.add('active'); });
   const el=document.getElementById('report');
-  html2pdf().set({margin:6,filename:'failed-orders-ua-stores.pdf',image:{type:'jpeg',quality:.98},
-    html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a3',orientation:'portrait'}}).from(el).save();
+  setTimeout(()=>{
+    html2pdf().set({margin:6,filename:'orders-health-ua-stores.pdf',image:{type:'jpeg',quality:.98},
+      html2canvas:{scale:2,useCORS:true},jsPDF:{unit:'mm',format:'a3',orientation:'portrait'}}).from(el).save()
+      .then(()=>['bad','comp'].forEach(t=>document.getElementById('pane-'+t).classList.remove('active')));
+  },400);
 }
 </script>
 </body>

@@ -239,10 +239,139 @@ toplost_html=""
 for g in top_lost:
     toplost_html+=f'<tr><td><b>{g}</b></td><td class="num">{tot[g][2]:,}</td><td class="num" style="color:#991b1b;font-weight:700">€{gmv[g][1]:,.0f}</td><td class="num">{gmv[g][1]/GMV_LOST*100:.1f}%</td></tr>'.replace(",", " ")
 
+# ================= BAD ORDERS =================
+bw = d.get("bad_weekly", []); ba = d.get("bad_attr", [])
+BAD=sum(i(r["bad"]) for r in bw); DEL_B=sum(i(r["delivered"]) for r in bw)
+TIC=sum(i(r["tickets"]) for r in bw); LATE10=sum(i(r["late10"]) for r in bw); LOW=sum(i(r["lowrate"]) for r in bw)
+bad_rate=BAD/DEL_B*100 if DEL_B else 0
+tic_rate=TIC/DEL_B*100 if DEL_B else 0
+late_rate=LATE10/DEL_B*100 if DEL_B else 0
+
+ACTOR_LABEL={'provider':'Партнер','courier':'Курʼєр','supply':'Ліквідність кур\'єрів','eater':'Клієнт','bolt':'Bolt (платформа)','unknown':'Невідомо'}
+ACTOR_COLOR={'provider':'#dc2626','courier':'#7c3aed','supply':'#ea580c','eater':'#2563eb','bolt':'#0891b2','unknown':'#9ca3af'}
+actor=collections.defaultdict(int)
+for r in ba: actor[r["actor"]]+=i(r["n"])
+BATT=sum(actor.values()) or 1
+actor_order=[a for a in ['provider','courier','supply','eater','bolt','unknown'] if actor.get(a)]
+
+def btheme(rs):
+    rs=(rs or "").lower()
+    if any(k in rs for k in ("delay","eta_error","late","took_longer","not_moving","redispatch","starvation","dispatch","batching","assignment","underestimate","overestimate","cold")): return "Запізнення / довга доставка"
+    if "out_of_stock" in rs: return "Немає товару (out of stock)"
+    if "did_not_respond" in rs or "closed" in rs or "too_many_orders" in rs or "device_issue" in rs or "do_not_wish" in rs: return "Партнер недоступний / не прийняв"
+    if "manually_failed_by_cs" in rs or "automatically_failed" in rs: return "Скасовано підтримкою / системою"
+    if "missing_item" in rs or "wrong_item" in rs or "entirely_wrong" in rs or "ignored_my_order_notes" in rs: return "Відсутні / неправильні позиції"
+    if any(k in rs for k in ("spoiled","undercooked","overcooked","expired","object_detected","contaminated","poisoning","damaged","spilled","does_not_match","description","photo","expectations","burnt")): return "Якість їжі / товару"
+    if "courier" in rs: return "Проблеми з курʼєром"
+    if "never_delivered" in rs: return "Не доставлено"
+    if any(k in rs for k in ("price","charged","pin","menu","question")): return "Оплата / ціна / питання"
+    return "Інше"
+THEME_COLOR={
+ "Запізнення / довга доставка":"#ea580c","Скасовано підтримкою / системою":"#6b7280",
+ "Партнер недоступний / не прийняв":"#dc2626","Відсутні / неправильні позиції":"#7c3aed",
+ "Немає товару (out of stock)":"#f59e0b","Проблеми з курʼєром":"#0891b2",
+ "Якість їжі / товару":"#16a34a","Оплата / ціна / питання":"#2563eb","Не доставлено":"#991b1b","Інше":"#9ca3af"}
+th=collections.defaultdict(int)
+for r in ba: th[btheme(r["reason"])]+=i(r["n"])
+TTH=sum(th.values()) or 1
+
+# weekly overall
+bw_del=collections.defaultdict(int); bw_bad=collections.defaultdict(int); bw_tic=collections.defaultdict(int)
+for r in bw:
+    bw_del[r["wk"]]+=i(r["delivered"]); bw_bad[r["wk"]]+=i(r["bad"]); bw_tic[r["wk"]]+=i(r["tickets"])
+ow_bad=[bw_bad[w] for w in weeks]
+ow_badrate=[round(bw_bad[w]/bw_del[w]*100,2) if bw_del[w] else 0 for w in weeks]
+ow_tic=[bw_tic[w] for w in weeks]
+ow_ticrate=[round(bw_tic[w]/bw_del[w]*100,2) if bw_del[w] else 0 for w in weeks]
+# weekly actor stacked
+awk=collections.defaultdict(lambda:collections.defaultdict(int))
+for r in ba: awk[r["actor"]][r["wk"]]+=i(r["n"])
+
+# per-partner
+btot=collections.defaultdict(lambda:[0,0,0])  # deliv, bad, tickets
+bweekp=collections.defaultdict(lambda:collections.defaultdict(lambda:[0,0]))  # partner->wk->[deliv,bad]
+for r in bw:
+    g=r["grp"] or "—"; btot[g][0]+=i(r["delivered"]); btot[g][1]+=i(r["bad"]); btot[g][2]+=i(r["tickets"])
+    bweekp[g][r["wk"]][0]+=i(r["delivered"]); bweekp[g][r["wk"]][1]+=i(r["bad"])
+topbad=sorted(btot.items(),key=lambda kv:-kv[1][1])[:15]
+
+# actor table + doughnut data
+actor_tbl=""
+for a in actor_order:
+    n=actor[a]; actor_tbl+=f'<tr><td><span class="dot" style="background:{ACTOR_COLOR[a]}"></span> {ACTOR_LABEL[a]}</td><td class="num"><b>{n:,}</b></td><td class="num">{n/BATT*100:.0f}%</td></tr>'.replace(",", " ")
+# theme table
+theme_tbl=""
+for t,n in sorted(th.items(),key=lambda kv:-kv[1]):
+    theme_tbl+=f'<tr><td><span class="dot" style="background:{THEME_COLOR.get(t,"#9ca3af")}"></span> {t}</td><td class="num"><b>{n:,}</b></td><td class="num">{n/TTH*100:.0f}%</td></tr>'.replace(",", " ")
+# per-partner bad table + heatmap
+def bhcol(v):
+    if v is None: return ("","-")
+    if v>=12: return ("cell-crit","%.1f%%"%v)
+    if v>=8: return ("cell-warn","%.1f%%"%v)
+    if v>=5: return ("","%.1f%%"%v)
+    return ("cell-good","%.1f%%"%v)
+badrows=""
+for idx,(g,v) in enumerate(topbad):
+    dl,bd,tk=v; br=bd/dl*100 if dl else 0; tr_=tk/dl*100 if dl else 0
+    bbadge='badge-r' if br>=12 else ('badge-y' if br>=8 else 'badge-g')
+    tbadge='badge-r' if tr_>=6 else ('badge-y' if tr_>=3 else 'badge-g')
+    badrows+=f'<tr><td>{medals[idx]} <b>{g}</b></td><td class="num">{dl:,}</td><td class="num"><b>{bd:,}</b></td><td class="num"><span class="badge {bbadge}">{br:.1f}%</span></td><td class="num">{tk:,}</td><td class="num"><span class="badge {tbadge}">{tr_:.1f}%</span></td></tr>'.replace(",", " ")
+# totals row bad
+B_del=sum(v[0] for _,v in topbad); B_bad=sum(v[1] for _,v in topbad); B_tic=sum(v[2] for _,v in topbad)
+badtotals=f'<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-15</td><td class="num" style="color:#fff;font-weight:700">{B_del:,}</td><td class="num" style="color:#fff;font-weight:700">{B_bad:,}</td><td class="num"><span class="badge badge-r">{B_bad/B_del*100:.1f}%</span></td><td class="num" style="color:#fff;font-weight:700">{B_tic:,}</td><td class="num"><span class="badge badge-r">{B_tic/B_del*100:.1f}%</span></td></tr>'.replace(",", " ")
+# heatmap bad rate
+badheat=""
+for g,_ in topbad:
+    cells=""
+    for w in weeks:
+        dlb=bweekp[g][w]; rate=dlb[1]/dlb[0]*100 if dlb[0] else None
+        cls,txt=bhcol(rate); cells+=f'<td class="num {cls}">{txt}</td>'
+    badheat+=f'<tr><td style="white-space:nowrap"><b>{g}</b></td>{cells}</tr>'
+
+# ================= COMPLAINTS (скарги) =================
+def ctheme(rs):
+    rs=(rs or "").lower()
+    if "missing_item" in rs or "wrong_item" in rs or "entirely_wrong" in rs or "ignored_my_order_notes" in rs: return "Відсутні / неправильні позиції"
+    if any(k in rs for k in ("spoiled","undercooked","overcooked","expired","object_detected","contaminated","poisoning","damaged","spilled","does_not_match","description","photo","expectations","burnt","cold")): return "Якість їжі / товару"
+    if "never_delivered" in rs: return "Не доставлено"
+    if "courier" in rs: return "Проблеми з курʼєром"
+    if any(k in rs for k in ("late","took_longer","not_moving")): return "Довге очікування / запізнення"
+    if any(k in rs for k in ("price","charged","pin","menu","question","calculation")): return "Оплата / ціна / питання"
+    return "Інше"
+CTHEME_COLOR={"Відсутні / неправильні позиції":"#7c3aed","Якість їжі / товару":"#16a34a",
+ "Не доставлено":"#991b1b","Проблеми з курʼєром":"#0891b2","Довге очікування / запізнення":"#ea580c",
+ "Оплата / ціна / питання":"#2563eb","Інше":"#9ca3af"}
+comp=collections.defaultdict(int)
+for r in ba:
+    rs=(r["reason"] or "")
+    if "eater" in rs.lower():
+        comp[ctheme(rs)]+=i(r["n"])
+CTOT=sum(comp.values()) or 1
+comp_tbl=""
+for t,n in sorted(comp.items(),key=lambda kv:-kv[1]):
+    comp_tbl+=f'<tr><td><span class="dot" style="background:{CTHEME_COLOR.get(t,"#9ca3af")}"></span> {t}</td><td class="num"><b>{n:,}</b></td><td class="num">{n/CTOT*100:.0f}%</td></tr>'.replace(",", " ")
+# per-partner tickets (complaints)
+ctop=sorted(btot.items(), key=lambda kv:-kv[1][2])[:15]
+comprows=""
+for idx,(g,v) in enumerate(ctop):
+    dl,bd,tk=v; tr_=tk/dl*100 if dl else 0
+    tbadge='badge-r' if tr_>=6 else ('badge-y' if tr_>=3 else 'badge-g')
+    comprows+=f'<tr><td>{medals[idx]} <b>{g}</b></td><td class="num">{dl:,}</td><td class="num"><b>{tk:,}</b></td><td class="num"><span class="badge {tbadge}">{tr_:.1f}%</span></td></tr>'.replace(",", " ")
+C_del=sum(v[0] for _,v in ctop); C_tic=sum(v[2] for _,v in ctop)
+comptotals=f'<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-15</td><td class="num" style="color:#fff;font-weight:700">{C_del:,}</td><td class="num" style="color:#fff;font-weight:700">{C_tic:,}</td><td class="num"><span class="badge badge-r">{C_tic/C_del*100:.1f}%</span></td></tr>'.replace(",", " ")
+
 # chart data
 import json as _j
 JS = {
   "weeks": wlabels,
+  "bad_actor_labels":[ACTOR_LABEL[a] for a in actor_order],
+  "bad_actor_data":[actor[a] for a in actor_order],
+  "bad_actor_colors":[ACTOR_COLOR[a] for a in actor_order],
+  "bad_actor_week":[[awk[a].get(w,0) for w in weeks] for a in actor_order],
+  "ow_bad":ow_bad, "ow_badrate":ow_badrate, "ow_tic":ow_tic, "ow_ticrate":ow_ticrate,
+  "comp_labels":[t for t,_ in sorted(comp.items(),key=lambda kv:-kv[1])],
+  "comp_data":[n for _,n in sorted(comp.items(),key=lambda kv:-kv[1])],
+  "comp_colors":[CTHEME_COLOR.get(t,"#9ca3af") for t,_ in sorted(comp.items(),key=lambda kv:-kv[1])],
   "ow_failed": ow_failed, "ow_rate": ow_rate, "ow_lost": ow_lost,
   "reasons": REASONS,
   "rcolors": [RCOLOR[r] for r in REASONS],
@@ -312,8 +441,16 @@ tr:hover{{background:#f9fafb}}
 .method{{background:#0f172a;color:#e2e8f0;border-radius:10px;padding:20px 22px;font-size:12.5px}}
 .method code{{background:#1e293b;color:#7dd3fc;padding:1px 6px;border-radius:4px;font-size:11.5px}}
 .method h3{{color:#fff}} .method b{{color:#fff}}
+.tabs{{display:flex;gap:6px;margin-bottom:26px;border-bottom:2px solid var(--border);flex-wrap:wrap}}
+.tab{{appearance:none;background:none;border:none;padding:12px 20px;font-size:14px;font-weight:600;color:var(--muted);cursor:pointer;border-bottom:3px solid transparent;margin-bottom:-2px;font-family:inherit;display:flex;align-items:center;gap:8px}}
+.tab:hover{{color:var(--text)}}
+.tab.active{{color:var(--accent-dark);border-bottom-color:var(--red)}}
+.tab .cnt{{font-size:11px;font-weight:700;background:#f1f5f9;color:#475569;border-radius:99px;padding:2px 8px}}
+.tab.active .cnt{{background:#fee2e2;color:#991b1b}}
+.tabpane{{display:none}}
+.tabpane.active{{display:block}}
 @media(max-width:900px){{.grid-2,.grid-3,.grid-4{{grid-template-columns:1fr}}}}
-@media print{{body{{background:#fff}}.card{{box-shadow:none}}.btn-pdf{{display:none}}}}
+@media print{{body{{background:#fff}}.card{{box-shadow:none}}.btn-pdf{{display:none}}.tab{{display:none}}.tabpane{{display:block!important}}}}
 </style>
 </head>
 <body>
@@ -322,13 +459,13 @@ tr:hover{{background:#f9fafb}}
 <div class="header">
   <div class="logo-dot">✕</div>
   <div>
-    <h1>Failed Orders — тижневий розбір</h1>
-    <div class="subtitle">Bolt Food UA · Stores · Топ-15 партнерів за failed-ордерами · причини, пояснення та розбивка по тижнях</div>
+    <h1>Orders Health — тижневий розбір</h1>
+    <div class="subtitle">Bolt Food UA · Stores · Failed · Bad orders · Скарги · топ-15 партнерів, причини та тижнева динаміка</div>
   </div>
   <div class="report-meta">
     Період: 01.05 – 30.06.2026 (10 тижнів, 2 часткові)<br>
     Джерело: Databricks · <code>fact_order_delivery</code><br>
-    Сформовано: 13.07.2026
+    Сформовано: 14.07.2026
     <br>
     <button class="btn-pdf" onclick="downloadPDF()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -336,6 +473,14 @@ tr:hover{{background:#f9fafb}}
     </button>
   </div>
 </div>
+
+<div class="tabs">
+  <button class="tab active" id="tab-failed" onclick="showTab('failed')">✕ Failed ордери <span class="cnt">{fmt(F)}</span></button>
+  <button class="tab" id="tab-bad" onclick="showTab('bad')">⚠ Bad orders <span class="cnt">{fmt(BAD)}</span></button>
+  <button class="tab" id="tab-comp" onclick="showTab('comp')">💬 Скарги <span class="cnt">{fmt(TIC)}</span></button>
+</div>
+
+<div class="tabpane active" id="pane-failed">
 
 <!-- VERDICT -->
 <div class="section">
@@ -516,44 +661,203 @@ tr:hover{{background:#f9fafb}}
   </div>
 </div>
 
-<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Failed Orders Deep-Dive · дані з Databricks станом на 13.07.2026</div>
+</div><!-- /pane-failed -->
+
+<!-- ============ BAD ORDERS TAB ============ -->
+<div class="tabpane" id="pane-bad">
+  <div class="section">
+    <div class="insight warn">
+      <div class="insight-title">Bad orders: {bad_rate:.1f}% доставлених замовлень «зіпсовані» — і в {actor['provider']/BATT*100:.0f}% випадків винен партнер</div>
+      <div class="insight-text">Bad order — це <b>доставлене</b> замовлення, яке пішло не так (переважно <b>запізнення</b>, а також out-of-stock, відсутні позиції, якість). За період таких <b>{fmt(BAD)} з {fmt(DEL_B)}</b> ({bad_rate:.1f}%). Головна причина — <b>запізнення/довга доставка ({th['Запізнення / довга доставка']/TTH*100:.0f}%)</b>. За винуватцем: партнер {actor['provider']/BATT*100:.0f}%, курʼєр {actor['courier']/BATT*100:.0f}%, ліквідність {actor['supply']/BATT*100:.0f}%.</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="grid-4">
+      <div class="card kpi"><div class="kpi-label">Bad orders</div><div class="kpi-value" style="color:#ea580c">{fmt(BAD)}</div><div class="kpi-sub down">{bad_rate:.1f}% доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Запізнення &gt;10 хв</div><div class="kpi-value">{fmt(LATE10)}</div><div class="kpi-sub neutral">{late_rate:.1f}% доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Провина партнера</div><div class="kpi-value">{actor['provider']/BATT*100:.0f}%</div><div class="kpi-sub down">{fmt(actor['provider'])} bad-ордерів</div></div>
+      <div class="card kpi"><div class="kpi-label">Низькі оцінки їжі (&le;3)</div><div class="kpi-value">{fmt(LOW)}</div><div class="kpi-sub stable">за період</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>1. Хто винен та за що (attribution)</h2>
+    <div class="grid-2">
+      <div class="card"><h3>Винуватець bad-ордера</h3><div class="chart-box"><canvas id="chartActor"></canvas></div></div>
+      <div class="card"><h3>Причини bad-ордерів (теми)</h3>
+        <table><thead><tr><th>Причина</th><th class="num">К-сть</th><th class="num">Частка</th></tr></thead><tbody>{theme_tbl}</tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>2. Динаміка по тижнях</h2>
+    <div class="grid-2">
+      <div class="card"><h3>Bad-order rate та кількість по тижнях</h3><div class="chart-box"><canvas id="chartBadTrend"></canvas></div></div>
+      <div class="card"><h3>Bad-ордери за винуватцем по тижнях</h3><div class="chart-box"><canvas id="chartActorWeek"></canvas></div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>3. Топ-15 партнерів за bad-ордерами</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Bad</th><th class="num">Bad-rate</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th></tr></thead>
+        <tbody>{badtotals}{badrows}</tbody>
+      </table>
+    </div>
+  </div>
+  <div class="section">
+    <h2>4. Bad-order rate по тижнях, % (теплокарта)</h2>
+    <div class="card"><div style="overflow-x:auto"><table>
+      <thead><tr><th>Партнер</th>{"".join(f'<th class="num">{w}</th>' for w in wlabels)}</tr></thead>
+      <tbody>{badheat}</tbody>
+    </table></div>
+    <div class="legend"><span><span class="dot" style="background:#dcfce7"></span>&lt;5%</span><span><span class="dot" style="background:#fef9c3"></span>8–12%</span><span><span class="dot" style="background:#fee2e2"></span>&ge;12%</span></div>
+    </div>
+  </div>
+</div><!-- /pane-bad -->
+
+<!-- ============ COMPLAINTS TAB ============ -->
+<div class="tabpane" id="pane-comp">
+  <div class="section">
+    <div class="insight" style="border-color:#2563eb;background:#eff6ff">
+      <div class="insight-title">Скарги: {fmt(TIC)} звернень у підтримку ({tic_rate:.1f}% доставлених)</div>
+      <div class="insight-text">«Скарга» тут = замовлення зі зверненням у підтримку (<code>has_ticket</code>) + категорії, на що саме скаржаться клієнти (з attribution, eater-reported). Найчастіше клієнти скаржаться на <b>{sorted(comp.items(),key=lambda kv:-kv[1])[0][0] if comp else '—'}</b>. Додатково {fmt(LOW)} замовлень отримали <b>низьку оцінку їжі (&le;3)</b>.</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="grid-4">
+      <div class="card kpi"><div class="kpi-label">Скарги (тикети)</div><div class="kpi-value" style="color:#2563eb">{fmt(TIC)}</div><div class="kpi-sub down">{tic_rate:.1f}% доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Категорій скарг (eater)</div><div class="kpi-value">{fmt(CTOT)}</div><div class="kpi-sub stable">issues attributed</div></div>
+      <div class="card kpi"><div class="kpi-label">Низькі оцінки їжі</div><div class="kpi-value">{fmt(LOW)}</div><div class="kpi-sub neutral">рейтинг &le;3</div></div>
+      <div class="card kpi"><div class="kpi-label">Запізнення &gt;10 хв</div><div class="kpi-value">{fmt(LATE10)}</div><div class="kpi-sub neutral">{late_rate:.1f}% доставлених</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>1. На що скаржаться клієнти</h2>
+    <div class="grid-2">
+      <div class="card"><h3>Категорії скарг (eater-reported)</h3><div class="chart-box"><canvas id="chartComp"></canvas></div></div>
+      <div class="card"><h3>Деталізація</h3>
+        <table><thead><tr><th>Категорія</th><th class="num">К-сть</th><th class="num">Частка</th></tr></thead><tbody>{comp_tbl}</tbody></table>
+      </div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>2. Скарги по тижнях</h2>
+    <div class="card"><h3>Тикети та ticket-rate по тижнях</h3><div class="chart-box" style="height:280px"><canvas id="chartTicTrend"></canvas></div></div>
+  </div>
+  <div class="section">
+    <h2>3. Топ-15 партнерів за скаргами</h2>
+    <div class="card">
+      <table>
+        <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th></tr></thead>
+        <tbody>{comptotals}{comprows}</tbody>
+      </table>
+    </div>
+  </div>
+  <div class="section">
+    <div class="method">
+      <h3>Пояснення (dbx)</h3>
+      <p><b>Bad order</b> = <code>fact_order_delivery.is_bad_order = true</code> серед доставлених. Атрибуція винуватця й причини — з таблиці <code>int_order_bad_order_attribution</code> (<code>bad_order_actor_at_fault</code>, <code>bad_order_main_reason</code>), зджойнена по <code>order_id</code>. Причини згруповано в теми.</p>
+      <p style="margin-top:8px"><b>Скарга</b> = замовлення зі зверненням у підтримку <code>has_ticket = true</code>. Категорії скарг — з eater-reported причин attribution (<code>bad_order_main_reason LIKE '%eater%'</code>). Низька оцінка — <code>order_food_rating_value &le; 3</code>; запізнення — <code>is_order_delivered_10_min_late</code>.</p>
+    </div>
+  </div>
+</div><!-- /pane-comp -->
+
+<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги) · дані з Databricks станом на 14.07.2026</div>
 
 </div>
 
 <script>
 const D={_j.dumps(JS, ensure_ascii=False)};
 const gridc='#eef1f4';
-new Chart(document.getElementById('chartTrend'),{{
-  data:{{labels:D.weeks,datasets:[
-    {{type:'bar',label:'Failed ордери',data:D.ow_failed,backgroundColor:'#fca5a5',yAxisID:'y',order:2}},
-    {{type:'line',label:'Fail-rate %',data:D.ow_rate,borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.3,yAxisID:'y1',order:1,pointRadius:3}}
-  ]}},
-  options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{position:'bottom'}}}},
-    scales:{{y:{{position:'left',title:{{display:true,text:'ордери'}},grid:{{color:gridc}}}},
-      y1:{{position:'right',title:{{display:true,text:'%'}},grid:{{drawOnChartArea:false}},suggestedMax:10}}}}}}
-}});
-new Chart(document.getElementById('chartLost'),{{
-  type:'bar',
-  data:{{labels:D.weeks,datasets:[{{label:'Втрачений GMV, €',data:D.ow_lost,backgroundColor:'#f87171',borderColor:'#dc2626',borderWidth:1}}]}},
-  options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}},
-    tooltip:{{callbacks:{{label:(c)=>'€'+c.parsed.y.toLocaleString('uk-UA')}}}}}},
-    scales:{{x:{{grid:{{display:false}}}},y:{{grid:{{color:gridc}},ticks:{{callback:(v)=>'€'+(v/1000)+'k'}}}}}}}}
-}});
-new Chart(document.getElementById('chartReasonWeek'),{{
-  type:'bar',
-  data:{{labels:D.weeks,datasets:D.reasons.map((r,idx)=>({{label:r,data:D.rweek[idx],backgroundColor:D.rcolors[idx]}}))}},
-  options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}}}},
-    scales:{{x:{{stacked:true,grid:{{display:false}}}},y:{{stacked:true,grid:{{color:gridc}}}}}}}}
-}});
-new Chart(document.getElementById('chartReasonMix'),{{
-  type:'doughnut',
-  data:{{labels:D.reasons,datasets:[{{data:D.rtot,backgroundColor:D.rcolors,borderWidth:2,borderColor:'#fff'}}]}},
-  options:{{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{{legend:{{position:'right',labels:{{boxWidth:12,font:{{size:11}}}}}}}}}}
-}});
+const pctY={{grid:{{drawOnChartArea:false}},position:'right',title:{{display:true,text:'%'}}}};
+const built={{}};
+
+function buildFailed(){{
+  new Chart(document.getElementById('chartTrend'),{{
+    data:{{labels:D.weeks,datasets:[
+      {{type:'bar',label:'Failed ордери',data:D.ow_failed,backgroundColor:'#fca5a5',yAxisID:'y',order:2}},
+      {{type:'line',label:'Fail-rate %',data:D.ow_rate,borderColor:'#dc2626',backgroundColor:'#dc2626',tension:.3,yAxisID:'y1',order:1,pointRadius:3}}
+    ]}},
+    options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{position:'bottom'}}}},
+      scales:{{y:{{position:'left',title:{{display:true,text:'ордери'}},grid:{{color:gridc}}}},
+        y1:{{position:'right',title:{{display:true,text:'%'}},grid:{{drawOnChartArea:false}},suggestedMax:10}}}}}}
+  }});
+  new Chart(document.getElementById('chartLost'),{{
+    type:'bar',
+    data:{{labels:D.weeks,datasets:[{{label:'Втрачений GMV, €',data:D.ow_lost,backgroundColor:'#f87171',borderColor:'#dc2626',borderWidth:1}}]}},
+    options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}},
+      tooltip:{{callbacks:{{label:(c)=>'€'+c.parsed.y.toLocaleString('uk-UA')}}}}}},
+      scales:{{x:{{grid:{{display:false}}}},y:{{grid:{{color:gridc}},ticks:{{callback:(v)=>'€'+(v/1000)+'k'}}}}}}}}
+  }});
+  new Chart(document.getElementById('chartReasonWeek'),{{
+    type:'bar',
+    data:{{labels:D.weeks,datasets:D.reasons.map((r,idx)=>({{label:r,data:D.rweek[idx],backgroundColor:D.rcolors[idx]}}))}},
+    options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{display:false}}}},
+      scales:{{x:{{stacked:true,grid:{{display:false}}}},y:{{stacked:true,grid:{{color:gridc}}}}}}}}
+  }});
+  new Chart(document.getElementById('chartReasonMix'),{{
+    type:'doughnut',
+    data:{{labels:D.reasons,datasets:[{{data:D.rtot,backgroundColor:D.rcolors,borderWidth:2,borderColor:'#fff'}}]}},
+    options:{{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{{legend:{{position:'right',labels:{{boxWidth:12,font:{{size:11}}}}}}}}}}
+  }});
+}}
+
+function buildBad(){{
+  new Chart(document.getElementById('chartActor'),{{
+    type:'doughnut',
+    data:{{labels:D.bad_actor_labels,datasets:[{{data:D.bad_actor_data,backgroundColor:D.bad_actor_colors,borderWidth:2,borderColor:'#fff'}}]}},
+    options:{{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{{legend:{{position:'right',labels:{{boxWidth:12,font:{{size:11}}}}}}}}}}
+  }});
+  new Chart(document.getElementById('chartBadTrend'),{{
+    data:{{labels:D.weeks,datasets:[
+      {{type:'bar',label:'Bad orders',data:D.ow_bad,backgroundColor:'#fdba74',yAxisID:'y',order:2}},
+      {{type:'line',label:'Bad-rate %',data:D.ow_badrate,borderColor:'#ea580c',backgroundColor:'#ea580c',tension:.3,yAxisID:'y1',order:1,pointRadius:3}}
+    ]}},
+    options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{position:'bottom'}}}},
+      scales:{{y:{{position:'left',grid:{{color:gridc}}}},y1:{{position:'right',grid:{{drawOnChartArea:false}},suggestedMax:20}}}}}}
+  }});
+  new Chart(document.getElementById('chartActorWeek'),{{
+    type:'bar',
+    data:{{labels:D.weeks,datasets:D.bad_actor_labels.map((l,idx)=>({{label:l,data:D.bad_actor_week[idx],backgroundColor:D.bad_actor_colors[idx]}}))}},
+    options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{position:'bottom',labels:{{boxWidth:11,font:{{size:10}}}}}}}},
+      scales:{{x:{{stacked:true,grid:{{display:false}}}},y:{{stacked:true,grid:{{color:gridc}}}}}}}}
+  }});
+}}
+
+function buildComp(){{
+  new Chart(document.getElementById('chartComp'),{{
+    type:'doughnut',
+    data:{{labels:D.comp_labels,datasets:[{{data:D.comp_data,backgroundColor:D.comp_colors,borderWidth:2,borderColor:'#fff'}}]}},
+    options:{{responsive:true,maintainAspectRatio:false,cutout:'55%',plugins:{{legend:{{position:'right',labels:{{boxWidth:12,font:{{size:11}}}}}}}}}}
+  }});
+  new Chart(document.getElementById('chartTicTrend'),{{
+    data:{{labels:D.weeks,datasets:[
+      {{type:'bar',label:'Скарги (тикети)',data:D.ow_tic,backgroundColor:'#93c5fd',yAxisID:'y',order:2}},
+      {{type:'line',label:'Ticket-rate %',data:D.ow_ticrate,borderColor:'#2563eb',backgroundColor:'#2563eb',tension:.3,yAxisID:'y1',order:1,pointRadius:3}}
+    ]}},
+    options:{{responsive:true,maintainAspectRatio:false,plugins:{{legend:{{position:'bottom'}}}},
+      scales:{{y:{{position:'left',grid:{{color:gridc}}}},y1:{{position:'right',grid:{{drawOnChartArea:false}},suggestedMax:10}}}}}}
+  }});
+}}
+
+const BUILDERS={{failed:buildFailed,bad:buildBad,comp:buildComp}};
+function showTab(id){{
+  ['failed','bad','comp'].forEach(t=>{{
+    document.getElementById('pane-'+t).classList.toggle('active', t===id);
+    document.getElementById('tab-'+t).classList.toggle('active', t===id);
+  }});
+  if(!built[id]){{ BUILDERS[id](); built[id]=true; }}
+}}
+showTab('failed');
+
 function downloadPDF(){{
+  ['failed','bad','comp'].forEach(t=>{{ if(!built[t]){{ BUILDERS[t](); built[t]=true; }} document.getElementById('pane-'+t).classList.add('active'); }});
   const el=document.getElementById('report');
-  html2pdf().set({{margin:6,filename:'failed-orders-ua-stores.pdf',image:{{type:'jpeg',quality:.98}},
-    html2canvas:{{scale:2,useCORS:true}},jsPDF:{{unit:'mm',format:'a3',orientation:'portrait'}}}}).from(el).save();
+  setTimeout(()=>{{
+    html2pdf().set({{margin:6,filename:'orders-health-ua-stores.pdf',image:{{type:'jpeg',quality:.98}},
+      html2canvas:{{scale:2,useCORS:true}},jsPDF:{{unit:'mm',format:'a3',orientation:'portrait'}}}}).from(el).save()
+      .then(()=>['bad','comp'].forEach(t=>document.getElementById('pane-'+t).classList.remove('active')));
+  }},400);
 }}
 </script>
 </body>
