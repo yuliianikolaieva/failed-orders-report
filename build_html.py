@@ -437,18 +437,18 @@ for g in smb_list:
     av_v=(f"{av:.2f}" if av is not None else "-1"); ac_v=(f"{ac:.2f}" if ac is not None else "-1")
     smb_rows+=(f'<tr>'
       f'<td data-v="{g}"><b>{g}</b></td>'
+      f'<td class="num" data-v="{dgmv:.0f}"><b>€{dgmv:,.0f}</b></td>'
+      f'<td class="num" data-v="{ac_v}">{ac_cell}</td>'
+      f'<td class="num" data-v="{av_v}">{av_cell}</td>'
       f'<td data-v="{am}" style="font-size:11px;color:#6b7280">{am}</td>'
       f'<td class="num" data-v="{stores_n}">{stores_n}</td>'
       f'<td class="num" data-v="{cr}">{cr:,}</td>'
       f'<td class="num" data-v="{dl}">{dl:,}</td>'
-      f'<td class="num" data-v="{av_v}">{av_cell}</td>'
-      f'<td class="num" data-v="{ac_v}">{ac_cell}</td>'
       f'<td class="num" data-v="{fr:.2f}"><span class="badge {badge_for(fr,7,12)}">{fr:.1f}%</span></td>'
       f'<td class="num" data-v="{br:.2f}"><span class="badge {badge_for(br,8,12)}">{br:.1f}%</span></td>'
       f'<td class="num" data-v="{tr_:.2f}"><span class="badge {badge_for(tr_,3,6)}">{tr_:.1f}%</span></td>'
       f'<td class="num" data-v="{ltr:.2f}">{ltr:.1f}%</td>'
       f'<td class="num" data-v="{aov:.2f}">€{aov:.1f}</td>'
-      f'<td class="num" data-v="{dgmv:.0f}">€{dgmv:,.0f}</td>'
       f'<td class="num" data-v="{lgmv:.0f}" style="color:#991b1b">€{lgmv:,.0f}</td>'
       f'<td style="font-size:11px">{dom}</td>'
       f'</tr>').replace(",", " ")
@@ -884,18 +884,18 @@ table.sortable th:hover{{color:var(--text)}}
       <table class="sortable" id="smbTable">
         <thead><tr>
           <th onclick="sortSMB(0,'s')">Партнер ▲▼</th>
-          <th onclick="sortSMB(1,'s')">AM ▲▼</th>
-          <th class="num" onclick="sortSMB(2,'n')">Точки</th>
-          <th class="num" onclick="sortSMB(3,'n')">Замовл.</th>
-          <th class="num" onclick="sortSMB(4,'n')">Достав.</th>
-          <th class="num" onclick="sortSMB(5,'n')">Availability</th>
-          <th class="num" onclick="sortSMB(6,'n')">Acceptance</th>
-          <th class="num" onclick="sortSMB(7,'n')">Fail-rate</th>
-          <th class="num" onclick="sortSMB(8,'n')">Bad-rate</th>
-          <th class="num" onclick="sortSMB(9,'n')">Скарги</th>
-          <th class="num" onclick="sortSMB(10,'n')">Late&gt;10хв</th>
-          <th class="num" onclick="sortSMB(11,'n')">AOV</th>
-          <th class="num" onclick="sortSMB(12,'n')">GMV</th>
+          <th class="num" onclick="sortSMB(1,'n')">GMV</th>
+          <th class="num" onclick="sortSMB(2,'n')">Acceptance</th>
+          <th class="num" onclick="sortSMB(3,'n')">Availability</th>
+          <th onclick="sortSMB(4,'s')">AM</th>
+          <th class="num" onclick="sortSMB(5,'n')">Точки</th>
+          <th class="num" onclick="sortSMB(6,'n')">Замовл.</th>
+          <th class="num" onclick="sortSMB(7,'n')">Достав.</th>
+          <th class="num" onclick="sortSMB(8,'n')">Fail-rate</th>
+          <th class="num" onclick="sortSMB(9,'n')">Bad-rate</th>
+          <th class="num" onclick="sortSMB(10,'n')">Скарги</th>
+          <th class="num" onclick="sortSMB(11,'n')">Late&gt;10хв</th>
+          <th class="num" onclick="sortSMB(12,'n')">AOV</th>
           <th class="num" onclick="sortSMB(13,'n')">Втрач.GMV</th>
           <th onclick="sortSMB(14,'s')">Дом. причина фейлів</th>
         </tr></thead>
@@ -1013,7 +1013,7 @@ function filterSMB(){{
   const q=document.getElementById('smbSearch').value.toLowerCase();
   document.querySelectorAll('#smbTable tbody tr').forEach(r=>{{
     const name=r.children[0].getAttribute('data-v').toLowerCase();
-    const am=(r.children[1].getAttribute('data-v')||'').toLowerCase();
+    const am=(r.children[4].getAttribute('data-v')||'').toLowerCase();
     r.style.display=(name.includes(q)||am.includes(q))?'':'none';
   }});
 }}
