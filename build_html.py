@@ -372,6 +372,62 @@ for idx,(g,v) in enumerate(ctop):
 C_del=sum(v[0] for _,v in ctop); C_tic=sum(v[2] for _,v in ctop)
 comptotals=f'<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-15</td><td class="num" style="color:#fff;font-weight:700">{C_del:,}</td><td class="num" style="color:#fff;font-weight:700">{C_tic:,}</td><td class="num"><span class="badge badge-r">{C_tic/C_del*100:.1f}%</span></td></tr>'.replace(",", " ")
 
+# ================= SMB PARTNERS (all, operational metrics) =================
+_meta_list=d.get("meta",[])
+smb_names={m["grp"] for m in _meta_list if (m.get("seg") or "").lower().find("smb")>=0}
+meta_by={m["grp"]:m for m in _meta_list}
+_smb_total_in_base=sum(1 for m in _meta_list if (m.get("seg") or "").lower().find("smb")>=0)
+p_tot=collections.defaultdict(lambda:[0,0,0,0.0,0.0])   # created, delivered, failed, deliv_gmv, lost_gmv
+for r in wt:
+    g=r["grp"] or "—"
+    p_tot[g][0]+=i(r["total"]); p_tot[g][1]+=i(r["delivered"]); p_tot[g][2]+=i(r["failed"])
+    p_tot[g][3]+=num(r.get("deliv_gmv")); p_tot[g][4]+=num(r.get("lost_gmv"))
+p_bad=collections.defaultdict(lambda:[0,0,0,0,0])       # delivered_b, bad, tickets, late10, lowrate
+for r in bw:
+    g=r["grp"] or "—"
+    p_bad[g][0]+=i(r["delivered"]); p_bad[g][1]+=i(r["bad"]); p_bad[g][2]+=i(r["tickets"])
+    p_bad[g][3]+=i(r["late10"]); p_bad[g][4]+=i(r["lowrate"])
+p_reason=collections.defaultdict(lambda:collections.defaultdict(int))
+for r in wr:
+    if (r["grp"] or "—") in smb_names:
+        p_reason[r["grp"] or "—"][r["reason"]]+=i(r["n"])
+
+smb_list=sorted([g for g in smb_names if p_tot[g][0]>0], key=lambda g:-p_tot[g][0])
+# SMB aggregate KPIs
+S_created=sum(p_tot[g][0] for g in smb_list); S_deliv=sum(p_tot[g][1] for g in smb_list)
+S_failed=sum(p_tot[g][2] for g in smb_list); S_gmv=sum(p_tot[g][3] for g in smb_list)
+S_lost=sum(p_tot[g][4] for g in smb_list)
+S_bad=sum(p_bad[g][1] for g in smb_list); S_bdeliv=sum(p_bad[g][0] for g in smb_list)
+S_tic=sum(p_bad[g][2] for g in smb_list); S_late=sum(p_bad[g][3] for g in smb_list)
+
+def pct(a,b): return a/b*100 if b else 0
+def badge_for(v,warn,crit):
+    return 'badge-r' if v>=crit else ('badge-y' if v>=warn else 'badge-g')
+
+smb_rows=""
+for g in smb_list:
+    cr,dl,fl,dgmv,lgmv=p_tot[g]
+    bdl,bd,tk,lt,lw=p_bad[g]
+    fr=pct(fl,cr); br=pct(bd,bdl); tr_=pct(tk,bdl); ltr=pct(lt,bdl)
+    aov=dgmv/dl if dl else 0
+    dom=max(p_reason[g],key=p_reason[g].get) if p_reason[g] else "—"
+    m=meta_by.get(g,{}); am=(m.get("am") or "").strip() or "—"; stores_n=i(m.get("stores"))
+    smb_rows+=(f'<tr>'
+      f'<td data-v="{g}"><b>{g}</b></td>'
+      f'<td data-v="{am}" style="font-size:11px;color:#6b7280">{am}</td>'
+      f'<td class="num" data-v="{stores_n}">{stores_n}</td>'
+      f'<td class="num" data-v="{cr}">{cr:,}</td>'
+      f'<td class="num" data-v="{dl}">{dl:,}</td>'
+      f'<td class="num" data-v="{fr:.2f}"><span class="badge {badge_for(fr,7,12)}">{fr:.1f}%</span></td>'
+      f'<td class="num" data-v="{br:.2f}"><span class="badge {badge_for(br,8,12)}">{br:.1f}%</span></td>'
+      f'<td class="num" data-v="{tr_:.2f}"><span class="badge {badge_for(tr_,3,6)}">{tr_:.1f}%</span></td>'
+      f'<td class="num" data-v="{ltr:.2f}">{ltr:.1f}%</td>'
+      f'<td class="num" data-v="{aov:.2f}">€{aov:.1f}</td>'
+      f'<td class="num" data-v="{dgmv:.0f}">€{dgmv:,.0f}</td>'
+      f'<td class="num" data-v="{lgmv:.0f}" style="color:#991b1b">€{lgmv:,.0f}</td>'
+      f'<td style="font-size:11px">{dom}</td>'
+      f'</tr>').replace(",", " ")
+
 # chart data
 import json as _j
 JS = {
@@ -461,6 +517,8 @@ tr:hover{{background:#f9fafb}}
 .tab.active .cnt{{background:#fee2e2;color:#991b1b}}
 .tabpane{{display:none}}
 .tabpane.active{{display:block}}
+table.sortable th{{cursor:pointer;user-select:none}}
+table.sortable th:hover{{color:var(--text)}}
 @media(max-width:900px){{.grid-2,.grid-3,.grid-4{{grid-template-columns:1fr}}}}
 @media print{{body{{background:#fff}}.card{{box-shadow:none}}.btn-pdf{{display:none}}.tab{{display:none}}.tabpane{{display:block!important}}}}
 </style>
@@ -490,6 +548,7 @@ tr:hover{{background:#f9fafb}}
   <button class="tab active" id="tab-failed" onclick="showTab('failed')">✕ Failed ордери <span class="cnt">{fmt(F)}</span></button>
   <button class="tab" id="tab-bad" onclick="showTab('bad')">⚠ Bad orders <span class="cnt">{fmt(BAD)}</span></button>
   <button class="tab" id="tab-comp" onclick="showTab('comp')">💬 Скарги <span class="cnt">{fmt(TIC)}</span></button>
+  <button class="tab" id="tab-smb" onclick="showTab('smb')">🏪 SMB партнери <span class="cnt">{len(smb_list)}</span></button>
 </div>
 
 <div class="tabpane active" id="pane-failed">
@@ -774,7 +833,52 @@ tr:hover{{background:#f9fafb}}
   </div>
 </div><!-- /pane-comp -->
 
-<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги) · дані з Databricks станом на 14.07.2026</div>
+<!-- ============ SMB PARTNERS TAB ============ -->
+<div class="tabpane" id="pane-smb">
+  <div class="section">
+    <div class="insight" style="border-color:#0891b2;background:#ecfeff">
+      <div class="insight-title">Усі SMB-партнери з операційними метриками</div>
+      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–30.06.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
+    </div>
+  </div>
+  <div class="section">
+    <div class="grid-4">
+      <div class="card kpi"><div class="kpi-label">SMB-партнерів (з замовл.)</div><div class="kpi-value">{len(smb_list)}</div><div class="kpi-sub stable">{sum(p_tot[g][1] for g in smb_list):,} доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Fail-rate (SMB)</div><div class="kpi-value" style="color:#dc2626">{pct(S_failed,S_created):.1f}%</div><div class="kpi-sub down">{S_failed:,} фейлів</div></div>
+      <div class="card kpi"><div class="kpi-label">Bad-rate (SMB)</div><div class="kpi-value" style="color:#ea580c">{pct(S_bad,S_bdeliv):.1f}%</div><div class="kpi-sub neutral">Скарги {pct(S_tic,S_bdeliv):.1f}%</div></div>
+      <div class="card kpi"><div class="kpi-label">GMV / Втрачено (SMB)</div><div class="kpi-value">€{S_gmv/1000:.0f}k</div><div class="kpi-sub down">втрачено €{S_lost/1000:.1f}k</div></div>
+    </div>
+  </div>
+  <div class="section">
+    <h2>Операційні метрики по кожному SMB-партнеру</h2>
+    <div class="card">
+      <input id="smbSearch" onkeyup="filterSMB()" placeholder="🔍 Пошук партнера…" style="width:100%;padding:10px 12px;margin-bottom:12px;border:1px solid var(--border);border-radius:8px;font-size:13px;font-family:inherit">
+      <div style="overflow-x:auto">
+      <table class="sortable" id="smbTable">
+        <thead><tr>
+          <th onclick="sortSMB(0,'s')">Партнер ▲▼</th>
+          <th onclick="sortSMB(1,'s')">AM ▲▼</th>
+          <th class="num" onclick="sortSMB(2,'n')">Точки</th>
+          <th class="num" onclick="sortSMB(3,'n')">Замовл.</th>
+          <th class="num" onclick="sortSMB(4,'n')">Достав.</th>
+          <th class="num" onclick="sortSMB(5,'n')">Fail-rate</th>
+          <th class="num" onclick="sortSMB(6,'n')">Bad-rate</th>
+          <th class="num" onclick="sortSMB(7,'n')">Скарги</th>
+          <th class="num" onclick="sortSMB(8,'n')">Late&gt;10хв</th>
+          <th class="num" onclick="sortSMB(9,'n')">AOV</th>
+          <th class="num" onclick="sortSMB(10,'n')">GMV</th>
+          <th class="num" onclick="sortSMB(11,'n')">Втрач.GMV</th>
+          <th onclick="sortSMB(12,'s')">Дом. причина фейлів</th>
+        </tr></thead>
+        <tbody>{smb_rows}</tbody>
+      </table>
+      </div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:8px">Клік на заголовок — сортування. Fail/Bad/Скарги: зелений — ок, жовтий — увага, червоний — критично.</div>
+    </div>
+  </div>
+</div><!-- /pane-smb -->
+
+<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks за 01.05–30.06.2026</div>
 
 </div>
 
@@ -852,9 +956,10 @@ function buildComp(){{
   }});
 }}
 
-const BUILDERS={{failed:buildFailed,bad:buildBad,comp:buildComp}};
+const BUILDERS={{failed:buildFailed,bad:buildBad,comp:buildComp,smb:function(){{}}}};
+const TABS=['failed','bad','comp','smb'];
 function showTab(id){{
-  ['failed','bad','comp'].forEach(t=>{{
+  TABS.forEach(t=>{{
     document.getElementById('pane-'+t).classList.toggle('active', t===id);
     document.getElementById('tab-'+t).classList.toggle('active', t===id);
   }});
@@ -862,13 +967,35 @@ function showTab(id){{
 }}
 showTab('failed');
 
+let smbSort={{col:-1,dir:1}};
+function sortSMB(col,type){{
+  const tb=document.querySelector('#smbTable tbody');
+  const rows=Array.from(tb.querySelectorAll('tr'));
+  smbSort.dir = (smbSort.col===col)? -smbSort.dir : (type==='n'? -1 : 1);
+  smbSort.col=col;
+  rows.sort((a,b)=>{{
+    let x=a.children[col].getAttribute('data-v'), y=b.children[col].getAttribute('data-v');
+    if(type==='n'){{x=parseFloat(x)||0;y=parseFloat(y)||0;return (x-y)*smbSort.dir;}}
+    return String(x).localeCompare(String(y),'uk')*smbSort.dir;
+  }});
+  rows.forEach(r=>tb.appendChild(r));
+}}
+function filterSMB(){{
+  const q=document.getElementById('smbSearch').value.toLowerCase();
+  document.querySelectorAll('#smbTable tbody tr').forEach(r=>{{
+    const name=r.children[0].getAttribute('data-v').toLowerCase();
+    const am=(r.children[1].getAttribute('data-v')||'').toLowerCase();
+    r.style.display=(name.includes(q)||am.includes(q))?'':'none';
+  }});
+}}
+
 function downloadPDF(){{
-  ['failed','bad','comp'].forEach(t=>{{ if(!built[t]){{ BUILDERS[t](); built[t]=true; }} document.getElementById('pane-'+t).classList.add('active'); }});
+  TABS.forEach(t=>{{ if(!built[t]){{ BUILDERS[t](); built[t]=true; }} document.getElementById('pane-'+t).classList.add('active'); }});
   const el=document.getElementById('report');
   setTimeout(()=>{{
     html2pdf().set({{margin:6,filename:'orders-health-ua-stores.pdf',image:{{type:'jpeg',quality:.98}},
       html2canvas:{{scale:2,useCORS:true}},jsPDF:{{unit:'mm',format:'a3',orientation:'portrait'}}}}).from(el).save()
-      .then(()=>['bad','comp'].forEach(t=>document.getElementById('pane-'+t).classList.remove('active')));
+      .then(()=>['bad','comp','smb'].forEach(t=>document.getElementById('pane-'+t).classList.remove('active')));
   }},400);
 }}
 </script>
