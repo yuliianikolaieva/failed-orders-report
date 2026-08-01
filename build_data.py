@@ -136,6 +136,38 @@ GROUP BY 1,2,3,4
 bad_attr = rows_to_dicts(c6, r6)
 print("  rows", len(bad_attr))
 
+# 7) Acceptance rate + rejection rate per partner (fact_provider_weekly)
+print("Q7 acceptance rate...")
+c7, r7 = run_cols(f"""
+SELECT {GRP} AS grp,
+  SUM(f.provider_acceptance_rate_value*f.provider_acceptance_rate_weight) AS acc_v,
+  SUM(f.provider_acceptance_rate_weight) AS acc_w,
+  SUM(f.provider_rejected_order_rate_value*f.provider_rejected_order_rate_weight) AS rej_v,
+  SUM(f.provider_rejected_order_rate_weight) AS rej_w
+FROM main.ng_delivery.fact_provider_weekly f
+JOIN main.ng_delivery.dim_provider_v2 p ON f.provider_id=p.provider_id
+WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
+  AND f.metric_timestamp_local >= DATE'{START}' AND f.metric_timestamp_local <= DATE'{END}'
+GROUP BY 1
+""")
+acceptance = rows_to_dicts(c7, r7)
+print("  rows", len(acceptance))
+
+# 8) Availability per partner (active_time / working_time)
+print("Q8 availability...")
+c8, r8 = run_cols(f"""
+SELECT {GRP} AS grp,
+  SUM(a.active_time) AS active_time,
+  SUM(a.working_time) AS working_time
+FROM main.ng_delivery.etl_delivery_provider_daily_availability a
+JOIN main.ng_delivery.dim_provider_v2 p ON a.provider_id=p.provider_id
+WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
+  AND a.created_date >= DATE'{START}' AND a.created_date <= DATE'{END}'
+GROUP BY 1
+""")
+availability = rows_to_dicts(c8, r8)
+print("  rows", len(availability))
+
 json.dump({
     "start": START, "end": END,
     "weekly_totals": weekly_totals,
@@ -144,5 +176,7 @@ json.dump({
     "stores": stores,
     "bad_weekly": bad_weekly,
     "bad_attr": bad_attr,
+    "acceptance": acceptance,
+    "availability": availability,
 }, open(HERE / "data.json", "w"), ensure_ascii=False)
 print("saved data.json")

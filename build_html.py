@@ -399,10 +399,29 @@ S_failed=sum(p_tot[g][2] for g in smb_list); S_gmv=sum(p_tot[g][3] for g in smb_
 S_lost=sum(p_tot[g][4] for g in smb_list)
 S_bad=sum(p_bad[g][1] for g in smb_list); S_bdeliv=sum(p_bad[g][0] for g in smb_list)
 S_tic=sum(p_bad[g][2] for g in smb_list); S_late=sum(p_bad[g][3] for g in smb_list)
+_sset=set(smb_list)
+smb_act=sum(num(r.get("active_time")) for r in d.get("availability",[]) if r["grp"] in _sset)
+smb_wrk=sum(num(r.get("working_time")) for r in d.get("availability",[]) if r["grp"] in _sset)
+S_avail=smb_act/smb_wrk*100 if smb_wrk else 0
+smb_accv=sum(num(r.get("acc_v")) for r in d.get("acceptance",[]) if r["grp"] in _sset)
+smb_accw=sum(num(r.get("acc_w")) for r in d.get("acceptance",[]) if r["grp"] in _sset)
+S_acc=smb_accv/smb_accw*100 if smb_accw else 0
 
 def pct(a,b): return a/b*100 if b else 0
 def badge_for(v,warn,crit):
     return 'badge-r' if v>=crit else ('badge-y' if v>=warn else 'badge-g')
+def badge_hi(v,good,bad):
+    return 'badge-g' if v>=good else ('badge-r' if v<bad else 'badge-y')
+
+# availability & acceptance per partner
+avail_by={}
+for r in d.get("availability",[]):
+    act=num(r.get("active_time")); wrk=num(r.get("working_time"))
+    avail_by[r["grp"]] = act/wrk*100 if wrk else None
+acc_by={}
+for r in d.get("acceptance",[]):
+    v=num(r.get("acc_v")); w=num(r.get("acc_w"))
+    acc_by[r["grp"]] = v/w*100 if w else None
 
 smb_rows=""
 for g in smb_list:
@@ -412,12 +431,18 @@ for g in smb_list:
     aov=dgmv/dl if dl else 0
     dom=max(p_reason[g],key=p_reason[g].get) if p_reason[g] else "—"
     m=meta_by.get(g,{}); am=(m.get("am") or "").strip() or "—"; stores_n=i(m.get("stores"))
+    av=avail_by.get(g); ac=acc_by.get(g)
+    av_cell=(f'<span class="badge {badge_hi(av,85,70)}">{av:.0f}%</span>' if av is not None else '<span style="color:#cbd5e1">—</span>')
+    ac_cell=(f'<span class="badge {badge_hi(ac,95,85)}">{ac:.0f}%</span>' if ac is not None else '<span style="color:#cbd5e1">—</span>')
+    av_v=(f"{av:.2f}" if av is not None else "-1"); ac_v=(f"{ac:.2f}" if ac is not None else "-1")
     smb_rows+=(f'<tr>'
       f'<td data-v="{g}"><b>{g}</b></td>'
       f'<td data-v="{am}" style="font-size:11px;color:#6b7280">{am}</td>'
       f'<td class="num" data-v="{stores_n}">{stores_n}</td>'
       f'<td class="num" data-v="{cr}">{cr:,}</td>'
       f'<td class="num" data-v="{dl}">{dl:,}</td>'
+      f'<td class="num" data-v="{av_v}">{av_cell}</td>'
+      f'<td class="num" data-v="{ac_v}">{ac_cell}</td>'
       f'<td class="num" data-v="{fr:.2f}"><span class="badge {badge_for(fr,7,12)}">{fr:.1f}%</span></td>'
       f'<td class="num" data-v="{br:.2f}"><span class="badge {badge_for(br,8,12)}">{br:.1f}%</span></td>'
       f'<td class="num" data-v="{tr_:.2f}"><span class="badge {badge_for(tr_,3,6)}">{tr_:.1f}%</span></td>'
@@ -838,14 +863,16 @@ table.sortable th:hover{{color:var(--text)}}
   <div class="section">
     <div class="insight" style="border-color:#0891b2;background:#ecfeff">
       <div class="insight-title">Усі SMB-партнери з операційними метриками</div>
-      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–30.06.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
+      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–30.06.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, <b>availability</b> (частка часу онлайн), <b>acceptance</b> (частка прийнятих замовлень), fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
     </div>
   </div>
   <div class="section">
-    <div class="grid-4">
+    <div class="grid-3">
       <div class="card kpi"><div class="kpi-label">SMB-партнерів (з замовл.)</div><div class="kpi-value">{len(smb_list)}</div><div class="kpi-sub stable">{sum(p_tot[g][1] for g in smb_list):,} доставлених</div></div>
+      <div class="card kpi"><div class="kpi-label">Availability (SMB)</div><div class="kpi-value" style="color:{'#16a34a' if S_avail>=85 else ('#ca8a04' if S_avail>=70 else '#dc2626')}">{S_avail:.0f}%</div><div class="kpi-sub stable">active / working time</div></div>
+      <div class="card kpi"><div class="kpi-label">Acceptance (SMB)</div><div class="kpi-value" style="color:{'#16a34a' if S_acc>=95 else ('#ca8a04' if S_acc>=85 else '#dc2626')}">{S_acc:.0f}%</div><div class="kpi-sub stable">прийнято партнером</div></div>
       <div class="card kpi"><div class="kpi-label">Fail-rate (SMB)</div><div class="kpi-value" style="color:#dc2626">{pct(S_failed,S_created):.1f}%</div><div class="kpi-sub down">{S_failed:,} фейлів</div></div>
-      <div class="card kpi"><div class="kpi-label">Bad-rate (SMB)</div><div class="kpi-value" style="color:#ea580c">{pct(S_bad,S_bdeliv):.1f}%</div><div class="kpi-sub neutral">Скарги {pct(S_tic,S_bdeliv):.1f}%</div></div>
+      <div class="card kpi"><div class="kpi-label">Bad-rate / Скарги (SMB)</div><div class="kpi-value" style="color:#ea580c">{pct(S_bad,S_bdeliv):.1f}%</div><div class="kpi-sub neutral">скарги {pct(S_tic,S_bdeliv):.1f}%</div></div>
       <div class="card kpi"><div class="kpi-label">GMV / Втрачено (SMB)</div><div class="kpi-value">€{S_gmv/1000:.0f}k</div><div class="kpi-sub down">втрачено €{S_lost/1000:.1f}k</div></div>
     </div>
   </div>
@@ -861,19 +888,21 @@ table.sortable th:hover{{color:var(--text)}}
           <th class="num" onclick="sortSMB(2,'n')">Точки</th>
           <th class="num" onclick="sortSMB(3,'n')">Замовл.</th>
           <th class="num" onclick="sortSMB(4,'n')">Достав.</th>
-          <th class="num" onclick="sortSMB(5,'n')">Fail-rate</th>
-          <th class="num" onclick="sortSMB(6,'n')">Bad-rate</th>
-          <th class="num" onclick="sortSMB(7,'n')">Скарги</th>
-          <th class="num" onclick="sortSMB(8,'n')">Late&gt;10хв</th>
-          <th class="num" onclick="sortSMB(9,'n')">AOV</th>
-          <th class="num" onclick="sortSMB(10,'n')">GMV</th>
-          <th class="num" onclick="sortSMB(11,'n')">Втрач.GMV</th>
-          <th onclick="sortSMB(12,'s')">Дом. причина фейлів</th>
+          <th class="num" onclick="sortSMB(5,'n')">Availability</th>
+          <th class="num" onclick="sortSMB(6,'n')">Acceptance</th>
+          <th class="num" onclick="sortSMB(7,'n')">Fail-rate</th>
+          <th class="num" onclick="sortSMB(8,'n')">Bad-rate</th>
+          <th class="num" onclick="sortSMB(9,'n')">Скарги</th>
+          <th class="num" onclick="sortSMB(10,'n')">Late&gt;10хв</th>
+          <th class="num" onclick="sortSMB(11,'n')">AOV</th>
+          <th class="num" onclick="sortSMB(12,'n')">GMV</th>
+          <th class="num" onclick="sortSMB(13,'n')">Втрач.GMV</th>
+          <th onclick="sortSMB(14,'s')">Дом. причина фейлів</th>
         </tr></thead>
         <tbody>{smb_rows}</tbody>
       </table>
       </div>
-      <div style="font-size:11px;color:#9ca3af;margin-top:8px">Клік на заголовок — сортування. Fail/Bad/Скарги: зелений — ок, жовтий — увага, червоний — критично.</div>
+      <div style="font-size:11px;color:#9ca3af;margin-top:8px">Клік на заголовок — сортування. Fail/Bad/Скарги: зелений — ок, жовтий — увага, червоний — критично. <b>Availability</b> = active/working time (<code>etl_delivery_provider_daily_availability</code>); <b>Acceptance</b> = <code>provider_acceptance_rate</code> (<code>fact_provider_weekly</code>); для availability/acceptance зелений = високий (добре). «—» — немає даних за період.</div>
     </div>
   </div>
 </div><!-- /pane-smb -->
