@@ -715,7 +715,7 @@ table.sortable th:hover{{color:var(--text)}}
   <h2>9. Методологія та пояснення розрахунку (dbx)</h2>
   <div class="method">
     <h3>Джерело даних</h3>
-    <p>Databricks (профіль <code>bolt-common</code>), таблиця фактів замовлень <code>hive_metastore.ng_delivery_spark.fact_order_delivery</code>, зджойнена з <code>dim_provider_v2</code> по <code>provider_id</code>. Фільтр: <code>country_code='ua'</code>, <code>delivery_vertical LIKE 'store%'</code>, період <code>order_created_date</code> 11.05–12.07.2026.</p>
+    <p>Databricks (профіль <code>bolt-common</code>), таблиця фактів замовлень <code>main.ng_delivery.fact_order_delivery</code>, зджойнена з <code>dim_provider_v2</code> по <code>provider_id</code>. Фільтр: <code>country_code='ua'</code>, <code>delivery_vertical LIKE 'store%'</code>, період <code>order_created_date</code> 11.05–12.07.2026.</p>
     <h3 style="margin-top:14px">Що вважаємо "failed"</h3>
     <p><b>Failed order = </b><code>order_state IN ('failed','rejected')</code>. Знаменник fail-rate = усі створені замовлення (<code>delivered + failed + rejected</code> + рідкісні waiting).</p>
     <h3 style="margin-top:14px">Втрачений GMV</h3>

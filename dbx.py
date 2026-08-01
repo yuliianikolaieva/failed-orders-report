@@ -62,8 +62,8 @@ if __name__ == "__main__":
     print("== order_state distribution (UA store, last 60d) ==")
     c, rows = run_cols("""
       SELECT f.order_state, COUNT(*) n
-      FROM hive_metastore.ng_delivery_spark.fact_order_delivery f
-      JOIN hive_metastore.ng_delivery_spark.dim_provider_v2 p ON f.provider_id=p.provider_id
+      FROM main.ng_delivery.fact_order_delivery f
+      JOIN main.ng_delivery.dim_provider_v2 p ON f.provider_id=p.provider_id
       WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
         AND f.order_created_date >= DATE_SUB(CURRENT_DATE(), 60)
       GROUP BY 1 ORDER BY 2 DESC
@@ -81,8 +81,8 @@ if __name__ == "__main__":
         CASE WHEN f.number_courier_rejects>0 THEN 1 ELSE 0 END AS courier_rej,
         f.has_eater_cancellation_ticket AS eater_cancel,
         COUNT(*) n
-      FROM hive_metastore.ng_delivery_spark.fact_order_delivery f
-      JOIN hive_metastore.ng_delivery_spark.dim_provider_v2 p ON f.provider_id=p.provider_id
+      FROM main.ng_delivery.fact_order_delivery f
+      JOIN main.ng_delivery.dim_provider_v2 p ON f.provider_id=p.provider_id
       WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
         AND f.order_created_date >= DATE_SUB(CURRENT_DATE(), 60)
         AND f.order_state IN ('failed','rejected')

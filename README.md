@@ -28,9 +28,17 @@ python3 build_data.py    # pull fresh data from Databricks (needs VARUS/.env cre
 python3 build_html.py    # render index.html
 ```
 
+## Data source (Unity Catalog)
+
+Дані мігрували у **Unity Catalog**: `hive_metastore.ng_delivery_spark.*` → **`main.ng_delivery.*`**
+(старий hive_metastore-шлях виведено з експлуатації). Два способи доступу:
+
+- **Cursor MCP** `user-databricks-sql` (`execute_sql_read_only`) — інтерактивні запити до `main.ng_delivery`.
+- **`dbx.py`** (REST API, токен з `VARUS/.env`) — використовується `build_data.py` для батч-вивантаження.
+
 ## Data & definitions
 
-Source: Databricks `hive_metastore.ng_delivery_spark.fact_order_delivery` joined to
+Source: Databricks `main.ng_delivery.fact_order_delivery` joined to
 `dim_provider_v2`, Bolt UA, `delivery_vertical LIKE 'store%'`, period by `order_created_date`
 01.05–30.06.2026 (10 тижнів Пн–Нд; крайові тижні 27.04 і 29.06 часткові).
 

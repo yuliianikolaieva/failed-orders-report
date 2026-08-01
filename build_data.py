@@ -24,8 +24,8 @@ END
 """
 
 BASE = f"""
-FROM hive_metastore.ng_delivery_spark.fact_order_delivery f
-JOIN hive_metastore.ng_delivery_spark.dim_provider_v2 p ON f.provider_id=p.provider_id
+FROM main.ng_delivery.fact_order_delivery f
+JOIN main.ng_delivery.dim_provider_v2 p ON f.provider_id=p.provider_id
 WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
   AND f.order_created_date >= DATE'{START}' AND f.order_created_date <= DATE'{END}'
 """
@@ -79,7 +79,7 @@ SELECT {GRP} AS grp,
   MAX(p.business_segment_v2) AS seg,
   CONCAT_WS(', ', COLLECT_SET(p.account_manager_name)) AS am,
   COUNT(DISTINCT p.provider_id) AS stores
-FROM hive_metastore.ng_delivery_spark.dim_provider_v2 p
+FROM main.ng_delivery.dim_provider_v2 p
 WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
 GROUP BY 1
 """)
@@ -125,9 +125,9 @@ SELECT {GRP} AS grp,
   a.bad_order_main_reason AS reason,
   COALESCE(a.bad_order_actor_at_fault,'unknown') AS actor,
   COUNT(*) AS n
-FROM hive_metastore.ng_delivery_spark.int_order_bad_order_attribution a
-JOIN hive_metastore.ng_delivery_spark.fact_order_delivery f ON a.order_id=f.order_id
-JOIN hive_metastore.ng_delivery_spark.dim_provider_v2 p ON f.provider_id=p.provider_id
+FROM main.ng_delivery.int_order_bad_order_attribution a
+JOIN main.ng_delivery.fact_order_delivery f ON a.order_id=f.order_id
+JOIN main.ng_delivery.dim_provider_v2 p ON f.provider_id=p.provider_id
 WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
   AND a.bad_order_main_reason IS NOT NULL
   AND a.order_created_date >= DATE'{START}' AND a.order_created_date <= DATE'{END}'
