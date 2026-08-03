@@ -184,6 +184,17 @@ for g,_ in top:
         cells+=f'<td class="num {cls}">{txt}</td>'
     heat_html+=f'<tr><td style="white-space:nowrap"><b>{g}</b></td>{cells}</tr>'
 
+# Enterprise fail-rate heatmap (all Enterprise partners)
+def ent_prate(g,w):
+    t,f=ent_byw[g][w]; return f/t*100 if t else None
+ent_heat_html=""
+for g in ent_list:
+    cells=""
+    for w in weeks:
+        cls,txt=hcol(ent_prate(g,w))
+        cells+=f'<td class="num {cls}">{txt}</td>'
+    ent_heat_html+=f'<tr><td style="white-space:nowrap"><b>{g}</b></td>{cells}</tr>'
+
 # per-partner reason stacked bars (share)
 pbar_html=""
 for g,_ in top:
@@ -730,6 +741,16 @@ table.sortable th:hover{{color:var(--text)}}
       </div>
       <div class="legend"><span><span class="dot" style="background:#dcfce7"></span>&lt;6% ок</span><span><span class="dot" style="background:#fef9c3"></span>6–10% увага</span><span><span class="dot" style="background:#fee2e2"></span>&ge;10% критично / &ge;20%</span></div>
     </div>
+  </div>
+  <h3 style="margin:22px 0 10px">Fail-rate по тижнях, % — усі Enterprise-партнери ({len(ent_list)})</h3>
+  <div class="card">
+    <div style="overflow-x:auto">
+    <table>
+      <thead><tr><th>Партнер (Enterprise)</th>{"".join(f'<th class="num">{w}</th>' for w in wlabels)}</tr></thead>
+      <tbody>{ent_heat_html}</tbody>
+    </table>
+    </div>
+    <div class="legend"><span><span class="dot" style="background:#dcfce7"></span>&lt;6% ок</span><span><span class="dot" style="background:#fef9c3"></span>6–10% увага</span><span><span class="dot" style="background:#fee2e2"></span>&ge;10% критично / &ge;20%</span></div>
   </div>
 </div>
 
