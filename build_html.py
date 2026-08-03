@@ -558,9 +558,9 @@ table.sortable th:hover{{color:var(--text)}}
     <div class="subtitle">Bolt Food UA · Stores · Failed · Bad orders · Скарги · топ-15 партнерів, причини та тижнева динаміка</div>
   </div>
   <div class="report-meta">
-    Період: 01.05 – 30.06.2026 (10 тижнів, 2 часткові)<br>
-    Джерело: Databricks · <code>fact_order_delivery</code><br>
-    Сформовано: 14.07.2026
+    Період: 01.05 – 31.07.2026 (14 тижнів, 2 часткові)<br>
+    Джерело: Databricks Unity Catalog · <code>main.ng_delivery</code><br>
+    Сформовано: 01.08.2026
     <br>
     <button class="btn-pdf" onclick="downloadPDF()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -582,7 +582,7 @@ table.sortable th:hover{{color:var(--text)}}
 <div class="section">
   <div class="insight crit">
     <div class="insight-title">Головний висновок: половина втрачених замовлень — на боці партнера</div>
-    <div class="insight-text">За 01.05–30.06.2026 по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-15 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли за 5 хв / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
+    <div class="insight-text">За 01.05–31.07.2026 по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-15 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли за 5 хв / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
   </div>
 </div>
 
@@ -753,7 +753,7 @@ table.sortable th:hover{{color:var(--text)}}
     4. <code>has_eater_cancellation_ticket</code> → <b>Клієнт скасував</b><br>
     5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з курʼєром</b><br>
     6. інакше → <b>Система / оплата / інше</b></p>
-    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 29.06 (лише 29–30.06) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
+    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 27.07 (лише 27–31.07) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
   </div>
 </div>
 
@@ -863,7 +863,7 @@ table.sortable th:hover{{color:var(--text)}}
   <div class="section">
     <div class="insight" style="border-color:#0891b2;background:#ecfeff">
       <div class="insight-title">Усі SMB-партнери з операційними метриками</div>
-      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–30.06.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, <b>availability</b> (частка часу онлайн), <b>acceptance</b> (частка прийнятих замовлень), fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
+      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–31.07.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, <b>availability</b> (частка часу онлайн), <b>acceptance</b> (частка прийнятих замовлень), fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
     </div>
   </div>
   <div class="section">
@@ -907,7 +907,7 @@ table.sortable th:hover{{color:var(--text)}}
   </div>
 </div><!-- /pane-smb -->
 
-<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks за 01.05–30.06.2026</div>
+<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks (main.ng_delivery) за 01.05–31.07.2026</div>
 
 </div>
 
