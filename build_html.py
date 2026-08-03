@@ -137,6 +137,44 @@ totals_row=f"""<tr style="background:#1A1A2E">
   <td style="color:#e5e7eb"><span class="dot" style="background:{RCOLOR.get(_dr,'#fff')}"></span> {_dr} <span style="color:#9ca3af">{_drp:.0f}%</span></td>
 </tr>""".replace(",", " ")
 
+# ---- ALL ENTERPRISE partners table (same columns as top-15) ----
+_ent_meta={m["grp"]:m for m in d.get("meta",[])}
+ent_names={g for g,m in _ent_meta.items() if (m.get("seg") or "").lower().find("enterprise")>=0}
+ent_reason=collections.defaultdict(lambda:collections.defaultdict(int))
+for r in wr:
+    g=r["grp"] or "—"
+    if g in ent_names: ent_reason[g][r["reason"]]+=i(r["n"])
+ent_byw=collections.defaultdict(lambda:collections.defaultdict(lambda:[0,0]))
+for r in wt:
+    g=r["grp"] or "—"
+    if g in ent_names:
+        ent_byw[g][r["wk"]][0]+=i(r["total"]); ent_byw[g][r["wk"]][1]+=i(r["failed"])
+def ent_wow(g):
+    vals=[ (ent_byw[g][w][1]/ent_byw[g][w][0]*100) for w in weeks if ent_byw[g][w][0] ]
+    return (vals[-1]-vals[0]) if len(vals)>=2 else None
+ent_list=sorted([g for g in ent_names if tot[g][0]>0], key=lambda g:-tot[g][2])
+ent_rows=""
+for g in ent_list:
+    total,deliv,fail=tot[g]; rate=fail/total*100 if total else 0
+    rs=ent_reason[g]; dr=(max(rs,key=rs.get) if rs else "—"); drp=(rs[dr]/sum(rs.values())*100 if rs else 0)
+    lost=gmv[g][1]; ch=ent_wow(g)
+    ch_html=(f'<span class="{"down" if ch>0 else "up"}">{"+" if ch>0 else ""}{ch:.1f} п.п.</span>' if ch is not None else "—")
+    badge='badge-r' if rate>=12 else ('badge-y' if rate>=7 else 'badge-g')
+    ent_rows+=(f'<tr><td><b>{g}</b></td>'
+      f'<td class="num">{total:,}</td><td class="num"><b>{fail:,}</b></td>'
+      f'<td class="num"><span class="badge {badge}">{rate:.1f}%</span></td>'
+      f'<td class="num" style="color:#991b1b;font-weight:700">€{lost:,.0f}</td>'
+      f'<td class="num">{ch_html}</td>'
+      f'<td><span style="color:{RCOLOR.get(dr,"#333")};font-weight:600">{dr}</span> <span style="color:#6b7280">{drp:.0f}%</span></td></tr>').replace(",", " ")
+E_cr=sum(tot[g][0] for g in ent_list); E_fl=sum(tot[g][2] for g in ent_list); E_lost=sum(gmv[g][1] for g in ent_list)
+ent_totals=(f'<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ Enterprise ({len(ent_list)})</td>'
+  f'<td class="num" style="color:#fff;font-weight:700">{E_cr:,}</td>'
+  f'<td class="num" style="color:#fff;font-weight:700">{E_fl:,}</td>'
+  f'<td class="num"><span class="badge badge-r">{E_fl/E_cr*100 if E_cr else 0:.1f}%</span></td>'
+  f'<td class="num" style="color:#fca5a5;font-weight:800">€{E_lost:,.0f}</td>'
+  f'<td class="num" style="color:#9ca3af">{E_fl/F*100:.0f}% усіх фейлів</td>'
+  f'<td></td></tr>').replace(",", " ")
+
 # heatmap rows
 heat_html=""
 for g,_ in top:
@@ -631,6 +669,13 @@ table.sortable th:hover{{color:var(--text)}}
     <table>
       <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Втрач. GMV</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
       <tbody>{totals_row}{rows_html}</tbody>
+    </table>
+  </div>
+  <h3 style="margin:22px 0 10px">Усі Enterprise-партнери ({len(ent_list)})</h3>
+  <div class="card">
+    <table>
+      <thead><tr><th>Партнер (Enterprise)</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Втрач. GMV</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
+      <tbody>{ent_totals}{ent_rows}</tbody>
     </table>
   </div>
 </div>
