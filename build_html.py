@@ -403,23 +403,43 @@ CTHEME_COLOR={"Відсутні / неправильні позиції":"#7c3ae
  "Не доставлено":"#991b1b","Проблеми з курʼєром":"#0891b2","Довге очікування / запізнення":"#ea580c",
  "Оплата / ціна / питання":"#2563eb","Інше":"#9ca3af"}
 comp=collections.defaultdict(int)
+pcomp=collections.defaultdict(lambda:collections.defaultdict(int))  # partner -> complaint category
 for r in ba:
     rs=(r["reason"] or "")
     if "eater" in rs.lower():
-        comp[ctheme(rs)]+=i(r["n"])
+        cat=ctheme(rs); comp[cat]+=i(r["n"]); pcomp[r["grp"] or "—"][cat]+=i(r["n"])
 CTOT=sum(comp.values()) or 1
+comp_order=[t for t,_ in sorted(comp.items(),key=lambda kv:-kv[1])]
 comp_tbl=""
-for t,n in sorted(comp.items(),key=lambda kv:-kv[1]):
+for t in comp_order:
+    n=comp[t]
     comp_tbl+=f'<tr><td><span class="dot" style="background:{CTHEME_COLOR.get(t,"#9ca3af")}"></span> {t}</td><td class="num"><b>{n:,}</b></td><td class="num">{n/CTOT*100:.0f}%</td></tr>'.replace(",", " ")
-# per-partner tickets (complaints)
+# per-partner tickets (complaints) + dominant complaint category
 ctop=sorted(btot.items(), key=lambda kv:-kv[1][2])[:15]
 comprows=""
 for idx,(g,v) in enumerate(ctop):
     dl,bd,tk=v; tr_=tk/dl*100 if dl else 0
     tbadge='badge-r' if tr_>=6 else ('badge-y' if tr_>=3 else 'badge-g')
-    comprows+=f'<tr><td>{medals[idx]} <b>{g}</b></td><td class="num">{dl:,}</td><td class="num"><b>{tk:,}</b></td><td class="num"><span class="badge {tbadge}">{tr_:.1f}%</span></td></tr>'.replace(",", " ")
+    pc=pcomp.get(g,{}); domc=(max(pc,key=pc.get) if pc else "—"); domp=(pc[domc]/sum(pc.values())*100 if pc else 0)
+    dom_html=(f'<span style="color:{CTHEME_COLOR.get(domc,"#333")};font-weight:600">{domc}</span> <span style="color:#6b7280">{domp:.0f}%</span>' if pc else '<span style="color:#cbd5e1">—</span>')
+    comprows+=f'<tr><td>{medals[idx]} <b>{g}</b></td><td class="num">{dl:,}</td><td class="num"><b>{tk:,}</b></td><td class="num"><span class="badge {tbadge}">{tr_:.1f}%</span></td><td>{dom_html}</td></tr>'.replace(",", " ")
 C_del=sum(v[0] for _,v in ctop); C_tic=sum(v[2] for _,v in ctop)
-comptotals=f'<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-15</td><td class="num" style="color:#fff;font-weight:700">{C_del:,}</td><td class="num" style="color:#fff;font-weight:700">{C_tic:,}</td><td class="num"><span class="badge badge-r">{C_tic/C_del*100:.1f}%</span></td></tr>'.replace(",", " ")
+comptotals=f'<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-15</td><td class="num" style="color:#fff;font-weight:700">{C_del:,}</td><td class="num" style="color:#fff;font-weight:700">{C_tic:,}</td><td class="num"><span class="badge badge-r">{C_tic/C_del*100:.1f}%</span></td><td></td></tr>'.replace(",", " ")
+# per-partner complaint-category stacked bars (top complained partners)
+pcomp_html=""
+for g,_ in ctop:
+    pc=pcomp.get(g,{}); s=sum(pc.values())
+    if s<=0:
+        pcomp_html+=f'<div class="store-row"><div class="store-name" title="{g}">{g} <b style="color:#111">0</b></div><div class="bar-bg"><div style="padding-left:6px;font-size:10px;color:#9ca3af">немає категоризованих скарг</div></div></div>'
+        continue
+    seg=""
+    for cat in comp_order:
+        nn=pc.get(cat,0)
+        if nn<=0: continue
+        w=nn/s*100
+        seg+=f'<div class="bar-fill" style="width:{w:.1f}%;background:{CTHEME_COLOR.get(cat,"#9ca3af")}" title="{cat}: {nn} ({w:.0f}%)">{(("%.0f%%"%w) if w>=10 else "")}</div>'
+    pcomp_html+=f'<div class="store-row"><div class="store-name" title="{g}">{g} <b style="color:#111">{s}</b></div><div class="bar-bg" style="display:flex">{seg}</div></div>'
+comp_legend="".join(f'<span><span class="dot" style="background:{CTHEME_COLOR.get(t,"#9ca3af")}"></span>{t}</span>' for t in comp_order)
 
 # ================= SMB PARTNERS (all, operational metrics) =================
 _meta_list=d.get("meta",[])
@@ -607,9 +627,9 @@ table.sortable th:hover{{color:var(--text)}}
     <div class="subtitle">Bolt Food UA · Stores · Failed · Bad orders · Скарги · топ-15 партнерів, причини та тижнева динаміка</div>
   </div>
   <div class="report-meta">
-    Період: 01.05 – 31.07.2026 (14 тижнів, 2 часткові)<br>
+    Період: 01.05 – 16.08.2026 (16 тижнів, 2 часткові)<br>
     Джерело: Databricks Unity Catalog · <code>main.ng_delivery</code><br>
-    Сформовано: 01.08.2026
+    Сформовано: 17.08.2026
     <br>
     <button class="btn-pdf" onclick="downloadPDF()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -631,7 +651,7 @@ table.sortable th:hover{{color:var(--text)}}
 <div class="section">
   <div class="insight crit">
     <div class="insight-title">Головний висновок: половина втрачених замовлень — на боці партнера</div>
-    <div class="insight-text">За 01.05–31.07.2026 по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-15 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли за 5 хв / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
+    <div class="insight-text">За 01.05–16.08.2026 по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-15 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли за 5 хв / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
   </div>
 </div>
 
@@ -819,7 +839,7 @@ table.sortable th:hover{{color:var(--text)}}
     4. <code>has_eater_cancellation_ticket</code> → <b>Клієнт скасував</b><br>
     5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з курʼєром</b><br>
     6. інакше → <b>Система / оплата / інше</b></p>
-    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 27.07 (лише 27–31.07) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
+    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 10.08 (лише 10–16.08) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
   </div>
 </div>
 
@@ -910,9 +930,16 @@ table.sortable th:hover{{color:var(--text)}}
     <h2>3. Топ-15 партнерів за скаргами</h2>
     <div class="card">
       <table>
-        <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th></tr></thead>
+        <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th><th>Дом. категорія скарг</th></tr></thead>
         <tbody>{comptotals}{comprows}</tbody>
       </table>
+    </div>
+  </div>
+  <div class="section">
+    <h2>4. На що саме скаржаться по кожному партнеру</h2>
+    <div class="card">
+      {pcomp_html}
+      <div class="legend">{comp_legend}</div>
     </div>
   </div>
   <div class="section">
@@ -929,7 +956,7 @@ table.sortable th:hover{{color:var(--text)}}
   <div class="section">
     <div class="insight" style="border-color:#0891b2;background:#ecfeff">
       <div class="insight-title">Усі SMB-партнери з операційними метриками</div>
-      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–31.07.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, <b>availability</b> (частка часу онлайн), <b>acceptance</b> (частка прийнятих замовлень), fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
+      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–16.08.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, <b>availability</b> (частка часу онлайн), <b>acceptance</b> (частка прийнятих замовлень), fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
     </div>
   </div>
   <div class="section">
@@ -973,7 +1000,7 @@ table.sortable th:hover{{color:var(--text)}}
   </div>
 </div><!-- /pane-smb -->
 
-<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks (main.ng_delivery) за 01.05–31.07.2026</div>
+<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks (main.ng_delivery) за 01.05–16.08.2026</div>
 
 </div>
 

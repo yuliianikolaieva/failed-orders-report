@@ -1,6 +1,6 @@
 # Orders Health — Weekly Deep-Dive (UA Stores)
 
-Тижневий аналіз здоровʼя замовлень по Bolt Food UA Stores за 01.05–31.07.2026,
+Тижневий аналіз здоровʼя замовлень по Bolt Food UA Stores за 01.05–16.08.2026,
 у форматі 3 вкладок:
 
 - **Failed ордери** — топ-15 партнерів за фейлами, пояснення причин, втрачений GMV, теплокарта.
@@ -40,7 +40,7 @@ python3 build_html.py    # render index.html
 
 Source: Databricks `main.ng_delivery.fact_order_delivery` joined to
 `dim_provider_v2`, Bolt UA, `delivery_vertical LIKE 'store%'`, period by `order_created_date`
-01.05–31.07.2026 (14 тижнів Пн–Нд; крайові тижні 27.04 і 27.07 часткові).
+01.05–16.08.2026 (16 тижнів Пн–Нд; крайові тижні 27.04 і 10.08 часткові).
 
 - **Failed order** = `order_state IN ('failed','rejected')`.
 - **Fail-rate** = failed / усі створені замовлення (delivered + failed + rejected + waiting).
