@@ -3,13 +3,31 @@
 import json, os, time, urllib.request, ssl
 from pathlib import Path
 
-ENV = Path("/Users/yuliia.nikolaieva/Downloads/Reports GIT HUB/VARUS/.env")
-for line in ENV.read_text().splitlines():
-    line = line.strip()
-    if not line or line.startswith("#") or "=" not in line:
-        continue
-    k, _, v = line.partition("=")
-    os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+# .env шукається у кількох місцях (перше читабельне виграє). Локальний клон для
+# launchd тримає креди в ~/ordershealth-report/.env, бо ~/Downloads захищений TCC.
+_ENV_CANDIDATES = [
+    os.environ.get("ORDERSHEALTH_ENV"),
+    str(Path.home() / "ordershealth-report" / ".env"),
+    str(Path(__file__).parent / ".env"),
+    "/Users/yuliia.nikolaieva/Downloads/Reports GIT HUB/VARUS/.env",
+]
+def _load_env():
+    for p in _ENV_CANDIDATES:
+        if not p:
+            continue
+        try:
+            txt = Path(p).read_text()
+        except Exception:
+            continue
+        for line in txt.splitlines():
+            line = line.strip()
+            if not line or line.startswith("#") or "=" not in line:
+                continue
+            k, _, v = line.partition("=")
+            os.environ.setdefault(k.strip(), v.strip().strip('"').strip("'"))
+        return p
+    raise SystemExit("dbx: .env не знайдено в жодному з кандидатів")
+_ENVFILE = _load_env()
 
 HOST = os.environ["DATABRICKS_HOST"]
 TOKEN = os.environ["DATABRICKS_TOKEN"]
