@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Генерує index.html — тижневий аналіз failed-ордерів по топ-15 партнерах (UA stores)."""
-import json, collections
+import json, collections, datetime as _dt
 from pathlib import Path
 HERE = Path(__file__).parent
 d = json.load(open(HERE / "data.json"))
@@ -11,6 +11,23 @@ def i(x): return int(num(x))
 wt, wr = d["weekly_totals"], d["weekly_reasons"]
 weeks = sorted({r["wk"] for r in wt})
 meta = {m["grp"]: m for m in d["meta"]}
+
+# ---- динамічні підписи періоду (звіт самооновлюється щотижня) ----
+def _d(iso):
+    y,m,dd=map(int,iso.split("-")); return _dt.date(y,m,dd)
+def _fmt_d(iso):
+    y,m,dd=iso.split("-"); return f"{dd}.{m}.{y}"
+def _fmt_dm(iso):
+    y,m,dd=iso.split("-"); return f"{dd}.{m}"
+PERIOD_START=d.get("start", weeks[0]); PERIOD_END=d.get("end", weeks[-1])
+PERIOD_LABEL=f"{_fmt_d(PERIOD_START)} – {_fmt_d(PERIOD_END)}"
+PERIOD_SHORT=f"{_fmt_dm(PERIOD_START)}–{_fmt_dm(PERIOD_END)}.{PERIOD_END[:4]}"
+NWEEKS=len(weeks)
+_pf = _d(weeks[0]) < _d(PERIOD_START)
+_pl = (_d(weeks[-1]) + _dt.timedelta(days=6)) > _d(PERIOD_END)
+_np = (1 if _pf else 0) + (1 if _pl else 0)
+WEEKS_LABEL=f"{NWEEKS} тижнів" + (f", {_np} часткові" if _np else "")
+TODAY_LABEL=_fmt_d(_dt.date.today().isoformat())
 
 REASONS = ['Партнер відхилив','Партнер не відповів (тайм-аут)','Партнер не прийняв (інше)',
            'Клієнт скасував','Проблема з курʼєром','Система / оплата / інше']
@@ -627,9 +644,9 @@ table.sortable th:hover{{color:var(--text)}}
     <div class="subtitle">Bolt Food UA · Stores · Failed · Bad orders · Скарги · топ-15 партнерів, причини та тижнева динаміка</div>
   </div>
   <div class="report-meta">
-    Період: 01.05 – 16.08.2026 (16 тижнів, 2 часткові)<br>
+    Період: {PERIOD_LABEL} ({WEEKS_LABEL})<br>
     Джерело: Databricks Unity Catalog · <code>main.ng_delivery</code><br>
-    Сформовано: 17.08.2026
+    Сформовано: {TODAY_LABEL}
     <br>
     <button class="btn-pdf" onclick="downloadPDF()">
       <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 3v12m0 0l-4-4m4 4l4-4M4 17v2a2 2 0 002 2h12a2 2 0 002-2v-2"/></svg>
@@ -651,7 +668,7 @@ table.sortable th:hover{{color:var(--text)}}
 <div class="section">
   <div class="insight crit">
     <div class="insight-title">Головний висновок: половина втрачених замовлень — на боці партнера</div>
-    <div class="insight-text">За 01.05–16.08.2026 по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-15 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли за 5 хв / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
+    <div class="insight-text">За {PERIOD_SHORT} по UA Stores впало <b>{fmt(F)} замовлень</b> ({F/G*100:.1f}% від {fmt(G)} створених). У топ-15 партнерів <b>{prov_share:.0f}% усіх фейлів — партнерська провина</b> (не відповіли за 5 хв / відхилили / не прийняли), і лише решта — кур'єр, клієнт або система. Найгостріша точка — <b>BEER MARKET</b> ({fmt(tot['BEER MARKET'][2])} фейлів, {tot['BEER MARKET'][2]/tot['BEER MARKET'][0]*100:.1f}%) та <b>ANRI-PHARM</b> ({tot.get('ANRI-PHARM',[0,0,0])[2]/max(tot.get('ANRI-PHARM',[1])[0],1)*100:.0f}% fail-rate).</div>
   </div>
 </div>
 
@@ -839,7 +856,7 @@ table.sortable th:hover{{color:var(--text)}}
     4. <code>has_eater_cancellation_ticket</code> → <b>Клієнт скасував</b><br>
     5. <code>number_courier_rejects &gt; 0</code> → <b>Проблема з курʼєром</b><br>
     6. інакше → <b>Система / оплата / інше</b></p>
-    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні 27.04 (лише 01–03.05) та 10.08 (лише 10–16.08) часткові. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
+    <p style="margin-top:10px;color:#94a3b8">Тижні — <code>DATE_TRUNC('week', order_created_date)</code> (Пн–Нд). Крайові тижні (перший та останній у діапазоні) можуть бути частковими. Партнер = <code>COALESCE(group_name, brand_name)</code>. Топ-15 обрано за абсолютною кількістю failed-ордерів.</p>
   </div>
 </div>
 
@@ -956,7 +973,7 @@ table.sortable th:hover{{color:var(--text)}}
   <div class="section">
     <div class="insight" style="border-color:#0891b2;background:#ecfeff">
       <div class="insight-title">Усі SMB-партнери з операційними метриками</div>
-      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за 01.05–16.08.2026 (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, <b>availability</b> (частка часу онлайн), <b>acceptance</b> (частка прийнятих замовлень), fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
+      <div class="insight-text">Повний список <b>{len(smb_list)} SMB-партнерів</b> (сегмент <code>SMB (AM Segment)</code>), які мали замовлення за {PERIOD_SHORT} (з {_smb_total_in_base} SMB-партнерів у базі). Таблицю можна <b>сортувати</b> (клік на заголовок) та <b>шукати</b> за назвою. Метрики: обсяг, <b>availability</b> (частка часу онлайн), <b>acceptance</b> (частка прийнятих замовлень), fail-rate, bad-rate, скарги, запізнення, AOV, GMV, втрачений GMV, домінуюча причина фейлів.</div>
     </div>
   </div>
   <div class="section">
@@ -1000,7 +1017,7 @@ table.sortable th:hover{{color:var(--text)}}
   </div>
 </div><!-- /pane-smb -->
 
-<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks (main.ng_delivery) за 01.05–16.08.2026</div>
+<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks (main.ng_delivery) за {PERIOD_LABEL}</div>
 
 </div>
 

@@ -7,9 +7,14 @@ from pathlib import Path
 from dbx import run_cols
 
 HERE = Path(__file__).parent
-# Період 01.05–16.08.2026, розбивка по тижнях (Пн–Нд); останній повний тиждень.
+# Період: з 01.05.2026 по останній ПОВНИЙ тиждень (Пн–Нд).
+# END рахується динамічно = останню неділю перед поточним тижнем, тож звіт
+# сам «доїжджає» до свіжого тижня при щотижневому оновленні.
+import datetime as _dt
 START = "2026-05-01"
-END = "2026-08-16"
+_today = _dt.date.today()
+END = (_today - _dt.timedelta(days=_today.isoweekday())).isoformat()  # last complete Sunday
+print("period:", START, "->", END)
 
 # Мутуально-виключна класифікація причини (пріоритет зверху вниз)
 REASON = """
