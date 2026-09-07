@@ -539,6 +539,126 @@ for g in smb_list:
       f'<td style="font-size:11px">{dom}</td>'
       f'</tr>').replace(",", " ")
 
+# ================= ROOT-CAUSE (deep-dive, weekly, since Aug 1) =================
+ROOT_WEEKS=[w for w in weeks if w >= "2026-08-03"]
+REASON_INFO = {
+ "manually_failed_by_cs": ("Скасовано оператором підтримки (CS) — зазвичай партнер не підтвердив/недоступний, немає товару або запит клієнта", "Розібрати CS-тикети тижня з партнером; перевірити доступність, auto-accept, години роботи"),
+ "did_not_respond": ("Партнер не відповів на замовлення за 5 хв (тайм-аут)", "Планшет/звук сповіщень + графік роботи точки; увімкнути auto-accept"),
+ "items_out_of_stock": ("Позицій не було в наявності", "Оновити стоп-листи й залишки; прибрати недоступні SKU з меню"),
+ "closed": ("Точка була зачинена при активному статусі", "Синхронізувати години роботи / вчасно ставити офлайн"),
+ "too_many_orders": ("Перевантаження замовленнями (не встигали)", "Busy-mode / ліміт у пік, підсилити зміну"),
+ "device_issue": ("Проблема з девайсом/планшетом партнера", "Перевірити/замінити планшет, звʼязок і зарядку"),
+ "do_not_wish_to_serve_this_client": ("Партнер відмовився обслуговувати замовлення", "Розібрати кейс із партнером"),
+ "provider_preparation_delay_seconds": ("Довге приготування/збірка на боці партнера", "Переглянути час готування в налаштуваннях; підсилити кухню в пік"),
+ "provider_preparation_overestimate_seconds": ("Партнер завищив час приготування", "Калібрувати prep-time у налаштуваннях"),
+ "pickup_delay_provider_fault_seconds": ("Замовлення не готове вчасно до забору", "Синхронізувати готовність із ETA курʼєра"),
+ "bolt_assignment_delay_from_supply_starvation_seconds": ("Не вистачало курʼєрів у зоні (supply starvation)", "Логістика: підсилити покриття зони/години — не провина партнера"),
+ "bolt_dispatch_start_delay_seconds": ("Затримка старту диспетчеризації (Bolt)", "Логістика/платформа: розібрати затримки призначення"),
+ "bolt_batching_delay_seconds": ("Затримка через батчинг замовлень (Bolt)", "Логістика: перевірити налаштування батчингу"),
+ "bolt_prep_instruction_delay_seconds": ("Затримка інструкції на приготування (Bolt)", "Платформа: розібрати prep-instruction delay"),
+ "bolt_cooking_eta_underestimate_seconds": ("Bolt занизив ETA готування", "Платформа: калібрувати cooking ETA"),
+ "courier_to_provider_eta_error_seconds": ("Курʼєр приїхав на точку пізніше ETA", "Гео/логістика: калібрування ETA до партнера"),
+ "provider_to_eater_eta_error_seconds": ("Помилка ETA від точки до клієнта", "Гео/логістика: калібрування ETA доставки"),
+ "courier_redispatch_duration_seconds": ("Довге перепризначення курʼєра", "Логістика: зменшити перепризначення, підсилити supply"),
+ "pickup_delay_courier_fault_seconds": ("Курʼєр запізнився на забір", "Логістика: дисципліна курʼєрів на піку"),
+ "courier_dropoff_delay_adjusted_seconds": ("Затримка курʼєра на видачі клієнту", "Логістика: розібрати затримки dropoff"),
+ "missing_item_eater": ("Клієнт отримав не всі позиції", "Партнер: контроль комплектації, звірка чеку перед видачею"),
+ "wrong_item_eater": ("Клієнт отримав неправильні позиції", "Партнер: контроль складання замовлень"),
+ "received_an_entirely_wrong_order_eater": ("Клієнт отримав цілком інше замовлення", "Партнер: контроль видачі за номером замовлення"),
+ "order_took_longer_eater": ("Клієнт скаржиться на довге очікування", "Партнер+логістика: скоротити час готування/доставки"),
+ "my_courier_is_not_moving_eater": ("Курʼєр не рухався / стояв", "Логістика: моніторинг курʼєрів у реальному часі"),
+ "my_courier_is_late_eater": ("Курʼєр запізнювався", "Логістика: дисципліна/підсилення на піку"),
+ "order_never_delivered_eater": ("Замовлення не доставлено клієнту", "Логістика: терміновий розбір інцидентів недоставки"),
+ "unable_to_contact_the_courier_eater": ("Клієнт не міг звʼязатися з курʼєром", "Логістика: контроль звʼязку курʼєр–клієнт"),
+ "my_courier_cannot_find_me_eater": ("Курʼєр не міг знайти клієнта", "Гео: точність адрес/пінів"),
+ "item_had_a_spoiled_taste_or_smell_eater": ("Скарга на несвіжий/зіпсований смак", "Партнер: контроль якості та свіжості"),
+ "order_damaged_eater": ("Замовлення пошкоджене при доставці", "Партнер+логістика: пакування та поводження"),
+ "food_was_overcooked_or_burnt_eater": ("Страва перегота/пригоріла", "Партнер: контроль якості кухні"),
+ "question_about_price_calculation_eater": ("Питання щодо розрахунку ціни", "Оновити ціни/тарифи; звірка з партнером"),
+ "menu_item_price_was_wrong_eater": ("Невірна ціна позиції в меню", "Партнер: оновити ціни в меню"),
+ "automatically_failed": ("Автоскасування системою (тайм-аут / немає курʼєра)", "Перевірити прийняття та наявність курʼєрів"),
+ "no_courier_is_assigned_to_the_order": ("Курʼєра не було призначено", "Логістика: покриття зони/години"),
+ "cannot_find_courier": ("Не вдалося знайти курʼєра", "Логістика: підсилити supply у зоні"),
+}
+def _reason_info(code):
+    c=(code or "").split(",")[0].strip()
+    if c in REASON_INFO: return REASON_INFO[c]
+    lbl=c.replace("_seconds","").replace("_eater","").replace("_"," ").strip()
+    return (lbl.capitalize() or "Інше", "Розібрати конкретні кейси з партнером/логістикою")
+
+# per partner × week metrics + baseline
+_pw=collections.defaultdict(lambda:collections.defaultdict(lambda:[0,0,0,0]))  # grp->wk->[created,failed,deliv,bad]
+for r in wt:
+    g=r["grp"] or "—"; _pw[g][r["wk"]][0]+=i(r["total"]); _pw[g][r["wk"]][1]+=i(r["failed"])
+for r in bw:
+    g=r["grp"] or "—"; _pw[g][r["wk"]][2]+=i(r["delivered"]); _pw[g][r["wk"]][3]+=i(r["bad"])
+_base=collections.defaultdict(lambda:[0,0,0,0])
+for g in _pw:
+    for w in _pw[g]:
+        v=_pw[g][w]; b=_base[g]; b[0]+=v[0]; b[1]+=v[1]; b[2]+=v[2]; b[3]+=v[3]
+def _rate(a,b): return a/b*100 if b else 0
+# concrete causes per (grp,wk) split by failed/delivered
+_cause=collections.defaultdict(lambda:collections.defaultdict(lambda:collections.defaultdict(int)))
+for r in d.get("bad_attr",[]):
+    g=r["grp"] or "—"; _cause[(g,r["wk"])][r.get("ostate","delivered")][r["reason"]]+=i(r["n"])
+
+rc_flags=[]  # (g,w,created,fr,fdev,br,bdev,spike_f,spike_b)
+for g in _pw:
+    bf=_rate(_base[g][1],_base[g][0]); bb=_rate(_base[g][3],_base[g][2])
+    for w in ROOT_WEEKS:
+        c,f,dl,bd=_pw[g][w]
+        if c<40: continue
+        fr=_rate(f,c); br=_rate(bd,dl); fdev=fr-bf; bdev=br-bb
+        sf=(fdev>=4 and fr>=8); sb=(bdev>=4 and br>=10)
+        if sf or sb: rc_flags.append([g,w,c,fr,fdev,br,bdev,sf,sb])
+def _sev(x):
+    g,w,c,fr,fdev,br,bdev,sf,sb=x
+    return (fdev*c/100 if sf else 0)+(bdev*_pw[g][w][2]/100 if sb else 0)
+rc_flags.sort(key=_sev, reverse=True)
+
+def _wk_label(w):
+    mon=_d(w); sun=mon+_dt.timedelta(days=6)
+    return f"{mon.day:02d}.{mon.month:02d}–{sun.day:02d}.{sun.month:02d}"
+def _top_causes(g,w,limit=3):
+    agg=collections.Counter()
+    for st in ("failed","delivered"):
+        for rs,n in _cause[(g,w)].get(st,{}).items(): agg[rs]+=n
+    return [(rs,n) for rs,n in agg.most_common(limit) if n>=2]
+
+# summary: top 5 issues overall
+rc_summary=""
+for x in rc_flags[:5]:
+    g,w,c,fr,fdev,br,bdev,sf,sb=x
+    tc=_top_causes(g,w,1)
+    lbl,act=_reason_info(tc[0][0]) if tc else ("—","—")
+    mtxt=[]
+    if sf: mtxt.append(f"failed {fr:.0f}% (Δ+{fdev:.0f} п.п.)")
+    if sb: mtxt.append(f"bad {br:.0f}% (Δ+{bdev:.0f} п.п.)")
+    rc_summary+=f'<li><b>{g}</b> · {_wk_label(w)}: {" + ".join(mtxt)} → <b>{lbl}</b>. <span style="color:#7c3aed">Дія:</span> {act}</li>'
+
+# per-week sections (most recent first)
+rc_weeks_html=""
+for w in sorted(ROOT_WEEKS, reverse=True):
+    rows=[x for x in rc_flags if x[1]==w]
+    if not rows: continue
+    body=""
+    for x in rows:
+        g,ww,c,fr,fdev,br,bdev,sf,sb=x
+        prob=""
+        if sf: prob+=f'<span class="badge badge-r">failed {fr:.0f}% (Δ+{fdev:.0f})</span> '
+        if sb: prob+=f'<span class="badge badge-y">bad {br:.0f}% (Δ+{bdev:.0f})</span>'
+        causes=_top_causes(g,ww,3)
+        clist="".join(f'<div style="margin-bottom:3px">• {_reason_info(rs)[0]} <b style="color:#111">({n})</b></div>' for rs,n in causes) or "<span style='color:#9ca3af'>—</span>"
+        act=_reason_info(causes[0][0])[1] if causes else "—"
+        body+=f'<tr><td><b>{g}</b></td><td>{prob}</td><td class="num">{c:,}</td><td style="font-size:11.5px">{clist}</td><td style="font-size:11.5px;color:#4c1d95">{act}</td></tr>'.replace(",", " ")
+    rc_weeks_html+=f'''<div class="section">
+      <h3 style="margin:0 0 10px">Тиждень {_wk_label(w)} <span style="color:#9ca3af;font-weight:400">· {len(rows)} партнер(ів) з відхиленнями</span></h3>
+      <div class="card"><table>
+        <thead><tr><th>Партнер</th><th>Відхилення</th><th class="num">Створено</th><th>Конкретні причини (к-сть)</th><th>Рекомендована дія</th></tr></thead>
+        <tbody>{body}</tbody>
+      </table></div>
+    </div>'''
+
 # chart data
 import json as _j
 JS = {
@@ -660,6 +780,7 @@ table.sortable th:hover{{color:var(--text)}}
   <button class="tab" id="tab-bad" onclick="showTab('bad')">⚠ Bad orders <span class="cnt">{fmt(BAD)}</span></button>
   <button class="tab" id="tab-comp" onclick="showTab('comp')">💬 Скарги <span class="cnt">{fmt(TIC)}</span></button>
   <button class="tab" id="tab-smb" onclick="showTab('smb')">🏪 SMB партнери <span class="cnt">{len(smb_list)}</span></button>
+  <button class="tab" id="tab-root" onclick="showTab('root')">🔎 Причини &amp; дії <span class="cnt">{len(rc_flags)}</span></button>
 </div>
 
 <div class="tabpane active" id="pane-failed">
@@ -1017,7 +1138,26 @@ table.sortable th:hover{{color:var(--text)}}
   </div>
 </div><!-- /pane-smb -->
 
-<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB) · дані з Databricks (main.ng_delivery) за {PERIOD_LABEL}</div>
+<!-- ============ ROOT-CAUSE TAB ============ -->
+<div class="tabpane" id="pane-root">
+  <div class="section">
+    <div class="insight crit">
+      <div class="insight-title">Партнери з великими відхиленнями по failed / bad — конкретні причини та дії</div>
+      <div class="insight-text">Аналіз на рівні кожного тижня <b>з 01.08.2026</b> по поточний. Показано лише партнерів із <b>суттєвим відхиленням</b> тижневого показника від власної норми (failed-rate або bad-rate ≥ +4 п.п. та достатній обсяг ≥40 замовлень/тиждень). Причини — <b>конкретні</b> (з attribution), не «інше/оплата». Топ-проблеми періоду:</div>
+      <ul style="margin:8px 0 0 18px;font-size:12.5px;color:#374151">{rc_summary}</ul>
+    </div>
+  </div>
+  {rc_weeks_html}
+  <div class="section">
+    <div class="method">
+      <h3>Як це рахується (dbx)</h3>
+      <p><b>Відхилення:</b> для кожного партнера рахуємо тижневий failed-rate (failed+rejected / створені) та bad-rate (is_bad_order / доставлені) і порівнюємо з його власною нормою за весь період. Прапорець — якщо тижневий показник ≥ норма +4 п.п. і достатній обсяг (≥40 замовлень/тиждень).</p>
+      <p style="margin-top:8px"><b>Конкретні причини:</b> з <code>int_order_bad_order_attribution.bad_order_main_reason</code> по <code>order_id</code> за той самий партнер×тиждень (failed та delivered разом). Кожен код розшифровано в людську причину + рекомендовану дію. Найчастіший «vague» код <code>manually_failed_by_cs</code> = скасування оператором підтримки (зазвичай партнер недоступний/не підтвердив або немає товару).</p>
+    </div>
+  </div>
+</div><!-- /pane-root -->
+
+<div style="text-align:center;color:#9ca3af;font-size:11px;margin-top:24px">Bolt Food UA · Orders Health (Failed · Bad · Скарги · SMB · Причини) · дані з Databricks (main.ng_delivery) за {PERIOD_LABEL}</div>
 
 </div>
 
@@ -1095,8 +1235,8 @@ function buildComp(){{
   }});
 }}
 
-const BUILDERS={{failed:buildFailed,bad:buildBad,comp:buildComp,smb:function(){{}}}};
-const TABS=['failed','bad','comp','smb'];
+const BUILDERS={{failed:buildFailed,bad:buildBad,comp:buildComp,smb:function(){{}},root:function(){{}}}};
+const TABS=['failed','bad','comp','smb','root'];
 function showTab(id){{
   TABS.forEach(t=>{{
     document.getElementById('pane-'+t).classList.toggle('active', t===id);
@@ -1134,7 +1274,7 @@ function downloadPDF(){{
   setTimeout(()=>{{
     html2pdf().set({{margin:6,filename:'orders-health-ua-stores.pdf',image:{{type:'jpeg',quality:.98}},
       html2canvas:{{scale:2,useCORS:true}},jsPDF:{{unit:'mm',format:'a3',orientation:'portrait'}}}}).from(el).save()
-      .then(()=>['bad','comp','smb'].forEach(t=>document.getElementById('pane-'+t).classList.remove('active')));
+      .then(()=>['bad','comp','smb','root'].forEach(t=>document.getElementById('pane-'+t).classList.remove('active')));
   }},400);
 }}
 </script>

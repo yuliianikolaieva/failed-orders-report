@@ -129,6 +129,7 @@ SELECT {GRP} AS grp,
   DATE_FORMAT(DATE_TRUNC('week', a.order_created_date),'yyyy-MM-dd') AS wk,
   a.bad_order_main_reason AS reason,
   COALESCE(a.bad_order_actor_at_fault,'unknown') AS actor,
+  CASE WHEN f.order_state IN ('failed','rejected') THEN 'failed' ELSE 'delivered' END AS ostate,
   COUNT(*) AS n
 FROM main.ng_delivery.int_order_bad_order_attribution a
 JOIN main.ng_delivery.fact_order_delivery f ON a.order_id=f.order_id
@@ -136,7 +137,7 @@ JOIN main.ng_delivery.dim_provider_v2 p ON f.provider_id=p.provider_id
 WHERE p.country_code='ua' AND p.delivery_vertical LIKE 'store%'
   AND a.bad_order_main_reason IS NOT NULL
   AND a.order_created_date >= DATE'{START}' AND a.order_created_date <= DATE'{END}'
-GROUP BY 1,2,3,4
+GROUP BY 1,2,3,4,5
 """)
 bad_attr = rows_to_dicts(c6, r6)
 print("  rows", len(bad_attr))
