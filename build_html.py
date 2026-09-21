@@ -499,15 +499,15 @@ def badge_for(v,warn,crit):
 def badge_hi(v,good,bad):
     return 'badge-g' if v>=good else ('badge-r' if v<bad else 'badge-y')
 
-# availability & acceptance per partner
-avail_by={}
+# availability & acceptance per partner (sum weekly rows → period total)
+_av=collections.defaultdict(lambda:[0.0,0.0])   # grp -> [active, working]
 for r in d.get("availability",[]):
-    act=num(r.get("active_time")); wrk=num(r.get("working_time"))
-    avail_by[r["grp"]] = act/wrk*100 if wrk else None
-acc_by={}
+    _av[r["grp"]][0]+=num(r.get("active_time")); _av[r["grp"]][1]+=num(r.get("working_time"))
+avail_by={g:(a/w*100 if w else None) for g,(a,w) in _av.items()}
+_ac=collections.defaultdict(lambda:[0.0,0.0])   # grp -> [v, w]
 for r in d.get("acceptance",[]):
-    v=num(r.get("acc_v")); w=num(r.get("acc_w"))
-    acc_by[r["grp"]] = v/w*100 if w else None
+    _ac[r["grp"]][0]+=num(r.get("acc_v")); _ac[r["grp"]][1]+=num(r.get("acc_w"))
+acc_by={g:(v/w*100 if w else None) for g,(v,w) in _ac.items()}
 
 smb_rows=""
 for g in smb_list:
@@ -651,13 +651,256 @@ for w in sorted(ROOT_WEEKS, reverse=True):
         clist="".join(f'<div style="margin-bottom:3px">• {_reason_info(rs)[0]} <b style="color:#111">({n})</b></div>' for rs,n in causes) or "<span style='color:#9ca3af'>—</span>"
         act=_reason_info(causes[0][0])[1] if causes else "—"
         body+=f'<tr><td><b>{g}</b></td><td>{prob}</td><td class="num">{c:,}</td><td style="font-size:11.5px">{clist}</td><td style="font-size:11.5px;color:#4c1d95">{act}</td></tr>'.replace(",", " ")
-    rc_weeks_html+=f'''<div class="section">
-      <h3 style="margin:0 0 10px">Тиждень {_wk_label(w)} <span style="color:#9ca3af;font-weight:400">· {len(rows)} партнер(ів) з відхиленнями</span></h3>
+    rc_weeks_html+=f'''<div class="section rcweek" data-wk="{w}">
+      <h3 style="margin:0 0 10px">Тиждень {_wk_label(w)} <span style="color:#9ca3af;font-weight:400">· {len(rows)} партнер(ів) з відхиленнями</span></h3>'''+f'''
       <div class="card"><table>
         <thead><tr><th>Партнер</th><th>Відхилення</th><th class="num">Створено</th><th>Конкретні причини (к-сть)</th><th>Рекомендована дія</th></tr></thead>
         <tbody>{body}</tbody>
       </table></div>
     </div>'''
+
+# ================= per-partner weekly dataset for client-side filter =================
+# metric index: 0 created,1 failed,2 delivered,3 bad,4 tickets,5 late10,6 lowrate,
+#               7 deliv_gmv,8 lost_gmv,9 av_active,10 av_working,11 acc_v,12 acc_w
+PART={}
+def _pcell(g,wk):
+    p=PART.get(g)
+    if p is None:
+        m=meta.get(g,{})
+        p=PART[g]={"seg":(m.get("seg") or ""),"am":(m.get("am") or ""),"stores":i(m.get("stores")),"w":{}}
+    if wk not in p["w"]: p["w"][wk]=[0,0,0,0,0,0,0,0,0,0,0,0,0]
+    return p["w"][wk]
+for r in wt:
+    cw=_pcell(r["grp"] or "—", r["wk"]); cw[0]+=i(r["total"]); cw[1]+=i(r["failed"])
+    cw[7]+=int(round(num(r.get("deliv_gmv")))); cw[8]+=int(round(num(r.get("lost_gmv"))))
+for r in bw:
+    cw=_pcell(r["grp"] or "—", r["wk"]); cw[2]+=i(r["delivered"]); cw[3]+=i(r["bad"])
+    cw[4]+=i(r["tickets"]); cw[5]+=i(r["late10"]); cw[6]+=i(r["lowrate"])
+for r in d.get("availability",[]):
+    cw=_pcell(r["grp"] or "—", r["wk"]); cw[9]+=int(round(num(r.get("active_time")))); cw[10]+=int(round(num(r.get("working_time"))))
+for r in d.get("acceptance",[]):
+    cw=_pcell(r["grp"] or "—", r["wk"]); cw[11]+=round(num(r.get("acc_v")),2); cw[12]+=round(num(r.get("acc_w")),2)
+
+# failed-reason categories per partner×week (idx into REASONS)
+FCAT={}
+for r in wr:
+    rs=r["reason"]
+    if rs not in REASONS: continue
+    g=r["grp"] or "—"; idx=REASONS.index(rs)
+    FCAT.setdefault(g,{}).setdefault(r["wk"],{}); FCAT[g][r["wk"]][idx]=FCAT[g][r["wk"]].get(idx,0)+i(r["n"])
+
+# complaint categories per partner×week (eater-reported)
+CCATS=["Відсутні / неправильні позиції","Якість їжі / товару","Не доставлено","Проблеми з курʼєром","Довге очікування / запізнення","Оплата / ціна / питання","Інше"]
+CCAT={}
+for r in d.get("bad_attr",[]):
+    rs=(r["reason"] or "")
+    if "eater" not in rs.lower(): continue
+    cat=ctheme(rs)
+    if cat not in CCATS: cat="Інше"
+    g=r["grp"] or "—"; idx=CCATS.index(cat)
+    CCAT.setdefault(g,{}).setdefault(r["wk"],{}); CCAT[g][r["wk"]][idx]=CCAT[g][r["wk"]].get(idx,0)+i(r["n"])
+
+# months (weeks grouped by month of Monday, leading partial clamped to period start month)
+_UAM={1:"Січень",2:"Лютий",3:"Березень",4:"Квітень",5:"Травень",6:"Червень",7:"Липень",8:"Серпень",9:"Вересень",10:"Жовтень",11:"Листопад",12:"Грудень"}
+_mo=collections.OrderedDict()
+for w in weeks:
+    mon=_d(w); mk=max(f"{mon.year}-{mon.month:02d}", PERIOD_START[:7])
+    _mo.setdefault(mk,[]).append(w)
+MONTHS=[{"k":k,"label":f"{_UAM[int(k[5:7])]} {k[:4]}","weeks":v} for k,v in _mo.items()]
+
+CLIENT={
+  "part":PART,"fcat":FCAT,"ccat":CCAT,
+  "weeks":weeks,"wlab":wlabels,"months":MONTHS,
+  "fcats":REASONS,"fcolors":[RCOLOR[r] for r in REASONS],
+  "ccats":CCATS,"ccolors":[CTHEME_COLOR.get(c,"#9ca3af") for c in CCATS],
+  "smbTotal":_smb_total_in_base,
+}
+
+FILTER_JS = r'''
+function _wsFromVal(v){
+  if(v==='all'||v==='none'||!v) return C.weeks.slice();
+  var p=v.split(':'),k=+p[1];
+  if(p[0]==='m') return C.months[k].weeks.slice();
+  if(p[0]==='w') return [C.weeks[k]];
+  return C.weeks.slice();
+}
+function _lblFromVal(v){
+  if(v==='all') return 'весь період'; if(v==='none') return '';
+  var p=v.split(':'),k=+p[1];
+  if(p[0]==='m') return C.months[k].label;
+  if(p[0]==='w') return 'тиждень '+C.wlab[k];
+  return '';
+}
+function initFilter(){
+  var a=document.getElementById('fltA'),b=document.getElementById('fltB');
+  var o='<option value="all">Весь період</option>';
+  C.months.forEach(function(m,i){o+='<option value="m:'+i+'">'+m.label+'</option>';});
+  C.weeks.forEach(function(w,i){o+='<option value="w:'+i+'">Тиждень '+C.wlab[i]+'</option>';});
+  a.innerHTML=o; b.innerHTML='<option value="none">— без порівняння</option>'+o;
+  a.value='all'; b.value='none';
+}
+function aggP(g,ws){var p=C.part[g]; if(!p) return null; var s=[0,0,0,0,0,0,0,0,0,0,0,0,0],any=false;
+  for(var j=0;j<ws.length;j++){var c=p.w[ws[j]]; if(c){any=true; for(var k=0;k<13;k++) s[k]+=c[k];}} return any?s:null;}
+function netTotals(ws){var s=[0,0,0,0,0,0,0,0,0,0,0,0,0]; for(var g in C.part){var a=aggP(g,ws); if(a) for(var k=0;k<13;k++) s[k]+=a[k];} return s;}
+function domC(map,g,ws){var m=map[g]; if(!m) return null; var agg={},tot=0;
+  for(var j=0;j<ws.length;j++){var x=m[ws[j]]; if(x) for(var k in x){agg[k]=(agg[k]||0)+x[k]; tot+=x[k];}}
+  var bi=-1,bn=-1; for(var k2 in agg) if(agg[k2]>bn){bn=agg[k2];bi=+k2;} return bi<0?null:{idx:bi,share:tot?bn/tot*100:0,tot:tot,agg:agg};}
+function R(s){return {c:s[0],f:s[1],dl:s[2],bd:s[3],tk:s[4],lt:s[5],lw:s[6],gmv:s[7],lost:s[8],
+  fr:s[0]?s[1]/s[0]*100:0,br:s[2]?s[3]/s[2]*100:0,tr:s[2]?s[4]/s[2]*100:0,ltr:s[2]?s[5]/s[2]*100:0,
+  aov:s[2]?s[7]/s[2]:0,avail:s[10]?s[9]/s[10]*100:null,acc:s[12]?s[11]/s[12]*100:null};}
+function fN(n){return Math.round(n).toLocaleString('uk-UA').replace(/[\u00A0,]/g,' ');}
+function fE(n){return '€'+fN(n);}
+function bcls(v,w,cr){return v>=cr?'badge-r':(v>=w?'badge-y':'badge-g');}
+function bhi(v,g0,b0){return v==null?'':(v>=g0?'badge-g':(v<b0?'badge-r':'badge-y'));}
+function dH(cur,prev,dir,suf){ if(prev==null) return ''; var d=cur-prev; suf=suf||'';
+  if(Math.abs(d)<0.05) return ' <span class="dcmp stable">(0)</span>';
+  var worse=dir>0?d>0:d<0; return ' <span class="dcmp '+(worse?'down':'up')+'">('+(d>0?'+':'')+d.toFixed(1)+suf+')</span>';}
+function dHi(cur,prev,dir){ if(prev==null) return ''; var d=Math.round(cur-prev);
+  if(d===0) return ' <span class="dcmp stable">(0)</span>';
+  var worse=dir>0?d>0:d<0; return ' <span class="dcmp '+(worse?'down':'up')+'">('+(d>0?'+':'')+fN(d)+')</span>';}
+function card(lbl,val,sub,cls,style){return '<div class="card kpi"><div class="kpi-label">'+lbl+'</div><div class="kpi-value" style="'+(style||'')+'">'+val+'</div><div class="kpi-sub '+(cls||'stable')+'">'+sub+'</div></div>';}
+function trendWithin(g,ws,which){var p=C.part[g]; if(!p) return '—'; var vals=[];
+  for(var j=0;j<ws.length;j++){var c=p.w[ws[j]]; if(c){var den=which==='f'?c[0]:c[2],nu=which==='f'?c[1]:c[3]; if(den>0) vals.push(nu/den*100);}}
+  if(vals.length<2) return '<span class="stable" style="font-size:10px">—</span>';
+  return dH(vals[vals.length-1],vals[0],1,' п.п.');}
+
+function renderFailed(wsA,wsB){
+  var arr=[]; for(var g in C.part){var a=aggP(g,wsA); if(a&&a[0]>0) arr.push([g,a]);}
+  arr.sort(function(x,y){return y[1][1]-x[1][1];});
+  var top=arr.slice(0,15);
+  var net=netTotals(wsA), netB=wsB?netTotals(wsB):null;
+  var F=net[1],G=net[0],LOST=net[8], fr=G?F/G*100:0;
+  var t15=0; top.forEach(function(t){t15+=t[1][1];});
+  var pv=0,tf=0; top.forEach(function(t){var dc=domC(C.fcat,t[0],wsA); if(dc){for(var k in dc.agg){tf+=dc.agg[k]; if(+k<=2) pv+=dc.agg[k];}}});
+  var provShare=tf?pv/tf*100:0;
+  var kp=document.getElementById('kpi-failed');
+  if(kp) kp.innerHTML=
+    card('Failed ордери (UA stores)', fN(F)+dHi(F,netB?netB[1]:null,1), fr.toFixed(1)+'% fail-rate','down')
+   +card('Топ-15 = частка фейлів', (F?Math.round(t15/F*100):0)+'%', fN(t15)+' з '+fN(F),'neutral')
+   +card('Партнерська провина (топ-15)', Math.round(provShare)+'%','не відповіли / відхилили','down')
+   +card('Втрачений GMV', fE(LOST)+dHi(LOST,netB?netB[8]:null,-1),'орієнтовно','down','color:#991b1b');
+  var body=''; var cT=0,fT=0,lT=0;
+  top.forEach(function(t,idx){ body+=rowFailed(t[0],t[1],wsA,wsB,idx); cT+=t[1][0];fT+=t[1][1];lT+=t[1][8];});
+  var tot='<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-'+top.length+'</td><td class="num" style="color:#fff;font-weight:700">'+fN(cT)+'</td><td class="num" style="color:#fff;font-weight:700">'+fN(fT)+'</td><td class="num"><span class="badge badge-r">'+(cT?(fT/cT*100).toFixed(1):0)+'%</span></td><td class="num" style="color:#fca5a5;font-weight:800">'+fE(lT)+'</td><td></td><td></td></tr>';
+  var tb=document.getElementById('tb-failed'); if(tb) tb.innerHTML=tot+body;
+  // Enterprise
+  var ent=arr.filter(function(t){return (C.part[t[0]].seg||'').toLowerCase().indexOf('enterprise')>=0;});
+  var eb='',ec=0,ef=0,el=0;
+  ent.forEach(function(t){ eb+=rowFailed(t[0],t[1],wsA,wsB,99); ec+=t[1][0];ef+=t[1][1];el+=t[1][8];});
+  var etot='<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ Enterprise ('+ent.length+')</td><td class="num" style="color:#fff;font-weight:700">'+fN(ec)+'</td><td class="num" style="color:#fff;font-weight:700">'+fN(ef)+'</td><td class="num"><span class="badge badge-r">'+(ec?(ef/ec*100).toFixed(1):0)+'%</span></td><td class="num" style="color:#fca5a5;font-weight:800">'+fE(el)+'</td><td></td><td></td></tr>';
+  var te=document.getElementById('tb-ent'); if(te) te.innerHTML=etot+eb;
+  var eh=document.getElementById('ent-h'); if(eh) eh.textContent='Усі Enterprise-партнери ('+ent.length+')';
+}
+function rowFailed(g,a,wsA,wsB,rank){
+  var r=R(a); var dc=domC(C.fcat,g,wsA);
+  var dn=dc?C.fcats[dc.idx]:'—', dcol=dc?C.fcolors[dc.idx]:'#333', dsh=dc?Math.round(dc.share):0;
+  var badge=bcls(r.fr,7,12);
+  var trend;
+  if(wsB){var b=aggP(g,wsB); var frB=b&&b[0]?b[1]/b[0]*100:null; trend=(frB==null)?'<span class="stable" style="font-size:10px">новий</span>':dH(r.fr,frB,1,' п.п.');}
+  else trend=trendWithin(g,wsA,'f');
+  var medal=rank<3?['🥇','🥈','🥉'][rank]+' ':'';
+  return '<tr><td>'+medal+'<b>'+g+'</b></td><td class="num">'+fN(r.c)+'</td><td class="num"><b>'+fN(r.f)+'</b></td><td class="num"><span class="badge '+badge+'">'+r.fr.toFixed(1)+'%</span></td><td class="num" style="color:#991b1b;font-weight:700">'+fE(r.lost)+'</td><td class="num">'+trend+'</td><td><span style="color:'+dcol+';font-weight:600">'+dn+'</span> <span style="color:#6b7280">'+dsh+'%</span></td></tr>';
+}
+function renderBad(wsA,wsB){
+  var arr=[]; for(var g in C.part){var a=aggP(g,wsA); if(a&&a[2]>0) arr.push([g,a]);}
+  arr.sort(function(x,y){return y[1][3]-x[1][3];}); var top=arr.slice(0,15);
+  var net=netTotals(wsA),netB=wsB?netTotals(wsB):null;
+  var BAD=net[3],DEL=net[2],LATE=net[5],LOW=net[6],TIC=net[4];
+  var br=DEL?BAD/DEL*100:0, ltr=DEL?LATE/DEL*100:0, tr=DEL?TIC/DEL*100:0;
+  var kp=document.getElementById('kpi-bad');
+  if(kp) kp.innerHTML=
+    card('Bad orders', fN(BAD)+dHi(BAD,netB?netB[3]:null,1), br.toFixed(1)+'% доставлених','down','color:#ea580c')
+   +card('Bad-rate', br.toFixed(1)+'%'+dH(br,netB&&netB[2]?netB[3]/netB[2]*100:null,1,''),'is_bad_order / доставлені','down')
+   +card('Запізнення >10 хв', fN(LATE)+dHi(LATE,netB?netB[5]:null,1), ltr.toFixed(1)+'% доставлених','neutral')
+   +card('Скарги (тикети)', fN(TIC)+dHi(TIC,netB?netB[4]:null,1), tr.toFixed(1)+'% доставлених','neutral');
+  var body='',dT=0,bT=0,tT=0;
+  top.forEach(function(t,idx){var r=R(t[1]); var mb=idx<3?['🥇','🥈','🥉'][idx]+' ':'';
+    var bb=bcls(r.br,8,12), tb2=bcls(r.tr,3,6);
+    var cmp=wsB?(function(){var b=aggP(t[0],wsB); var v=b&&b[2]?b[3]/b[2]*100:null; return dH(r.br,v,1,'');})():'';
+    body+='<tr><td>'+mb+'<b>'+t[0]+'</b></td><td class="num">'+fN(r.dl)+'</td><td class="num"><b>'+fN(r.bd)+'</b></td><td class="num"><span class="badge '+bb+'">'+r.br.toFixed(1)+'%</span>'+cmp+'</td><td class="num">'+fN(r.tk)+'</td><td class="num"><span class="badge '+tb2+'">'+r.tr.toFixed(1)+'%</span></td></tr>';
+    dT+=r.dl;bT+=r.bd;tT+=r.tk;});
+  var tot='<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-'+top.length+'</td><td class="num" style="color:#fff;font-weight:700">'+fN(dT)+'</td><td class="num" style="color:#fff;font-weight:700">'+fN(bT)+'</td><td class="num"><span class="badge badge-r">'+(dT?(bT/dT*100).toFixed(1):0)+'%</span></td><td class="num" style="color:#fff;font-weight:700">'+fN(tT)+'</td><td class="num"><span class="badge badge-r">'+(dT?(tT/dT*100).toFixed(1):0)+'%</span></td></tr>';
+  var tb=document.getElementById('tb-bad'); if(tb) tb.innerHTML=tot+body;
+}
+function renderComp(wsA,wsB){
+  var arr=[]; for(var g in C.part){var a=aggP(g,wsA); if(a&&a[2]>0) arr.push([g,a]);}
+  arr.sort(function(x,y){return y[1][4]-x[1][4];}); var top=arr.slice(0,15);
+  var net=netTotals(wsA),netB=wsB?netTotals(wsB):null;
+  var TIC=net[4],DEL=net[2],LOW=net[6],LATE=net[5], tr=DEL?TIC/DEL*100:0, ltr=DEL?LATE/DEL*100:0;
+  var ccnt=0; for(var g2 in C.ccat){var dc=domC(C.ccat,g2,wsA); if(dc) ccnt+=dc.tot;}
+  var kp=document.getElementById('kpi-comp');
+  if(kp) kp.innerHTML=
+    card('Скарги (тикети)', fN(TIC)+dHi(TIC,netB?netB[4]:null,1), tr.toFixed(1)+'% доставлених','down','color:#2563eb')
+   +card('Ticket-rate', tr.toFixed(1)+'%'+dH(tr,netB&&netB[2]?netB[4]/netB[2]*100:null,1,''),'звернення / доставлені','down')
+   +card('Низькі оцінки їжі', fN(LOW)+dHi(LOW,netB?netB[6]:null,1),'рейтинг ≤3','neutral')
+   +card('Запізнення >10 хв', fN(LATE)+dHi(LATE,netB?netB[5]:null,1), ltr.toFixed(1)+'% доставлених','neutral');
+  var body='',dT=0,tT=0;
+  top.forEach(function(t,idx){var r=R(t[1]); var mb=idx<3?['🥇','🥈','🥉'][idx]+' ':'';
+    var tb2=bcls(r.tr,3,6); var dc=domC(C.ccat,t[0],wsA);
+    var dom=dc?('<span style="color:'+C.ccolors[dc.idx]+';font-weight:600">'+C.ccats[dc.idx]+'</span> <span style="color:#6b7280">'+Math.round(dc.share)+'%</span>'):'<span style="color:#cbd5e1">—</span>';
+    body+='<tr><td>'+mb+'<b>'+t[0]+'</b></td><td class="num">'+fN(r.dl)+'</td><td class="num"><b>'+fN(r.tk)+'</b></td><td class="num"><span class="badge '+tb2+'">'+r.tr.toFixed(1)+'%</span></td><td style="font-size:11.5px">'+dom+'</td></tr>';
+    dT+=r.dl;tT+=r.tk;});
+  var tot='<tr style="background:#1A1A2E"><td style="color:#fff;font-weight:700">РАЗОМ топ-'+top.length+'</td><td class="num" style="color:#fff;font-weight:700">'+fN(dT)+'</td><td class="num" style="color:#fff;font-weight:700">'+fN(tT)+'</td><td class="num"><span class="badge badge-r">'+(dT?(tT/dT*100).toFixed(1):0)+'%</span></td><td></td></tr>';
+  var tb=document.getElementById('tb-comp'); if(tb) tb.innerHTML=tot+body;
+}
+function renderSMB(wsA,wsB){
+  var arr=[]; for(var g in C.part){ if((C.part[g].seg||'').toLowerCase().indexOf('smb')<0) continue; var a=aggP(g,wsA); if(a&&a[0]>0) arr.push([g,a]); }
+  arr.sort(function(x,y){return y[1][0]-x[1][0];});
+  // KPIs
+  var sc=0,sf=0,sdl=0,sbd=0,stk=0,sg=0,sl=0,aA=0,aW=0,cV=0,cW=0;
+  arr.forEach(function(t){var s=t[1]; sc+=s[0];sf+=s[1];sdl+=s[2];sbd+=s[3];stk+=s[4];sg+=s[7];sl+=s[8];aA+=s[9];aW+=s[10];cV+=s[11];cW+=s[12];});
+  var av=aW?aA/aW*100:0, ac=cW?cV/cW*100:0;
+  var kp=document.getElementById('kpi-smb');
+  if(kp) kp.innerHTML=
+    card('SMB-партнерів (з замовл.)', arr.length, fN(sdl)+' доставлених','stable')
+   +card('Availability (SMB)', Math.round(av)+'%','active / working time','stable', av>=85?'color:#16a34a':(av>=70?'color:#ca8a04':'color:#dc2626'))
+   +card('Acceptance (SMB)', Math.round(ac)+'%','прийнято партнером','stable', ac>=95?'color:#16a34a':(ac>=85?'color:#ca8a04':'color:#dc2626'))
+   +card('Fail-rate (SMB)', (sc?(sf/sc*100).toFixed(1):0)+'%', fN(sf)+' фейлів','down','color:#dc2626')
+   +card('Bad-rate / Скарги (SMB)', (sdl?(sbd/sdl*100).toFixed(1):0)+'%','скарги '+(sdl?(stk/sdl*100).toFixed(1):0)+'%','neutral','color:#ea580c')
+   +card('GMV / Втрачено (SMB)', fE(sg),'втрачено '+fE(sl),'down');
+  var body='';
+  arr.forEach(function(t){ body+=rowSMB(t[0],t[1],wsA); });
+  var tb=document.getElementById('tb-smb'); if(tb) tb.innerHTML=body;
+  var sh=document.getElementById('smb-h'); if(sh) sh.textContent=arr.length;
+}
+function rowSMB(g,a,wsA){
+  var r=R(a),p=C.part[g]; var dc=domC(C.fcat,g,wsA);
+  var dn=dc?C.fcats[dc.idx]:'—';
+  var av=r.avail, ac=r.acc;
+  var avc=(av==null)?'<span style="color:#cbd5e1">—</span>':'<span class="badge '+bhi(av,85,70)+'">'+Math.round(av)+'%</span>';
+  var acc=(ac==null)?'<span style="color:#cbd5e1">—</span>':'<span class="badge '+bhi(ac,95,85)+'">'+Math.round(ac)+'%</span>';
+  var avv=(av==null)?'-1':av.toFixed(2), acv=(ac==null)?'-1':ac.toFixed(2);
+  return '<tr>'
+   +'<td data-v="'+g+'"><b>'+g+'</b></td>'
+   +'<td class="num" data-v="'+r.gmv.toFixed(0)+'"><b>'+fE(r.gmv)+'</b></td>'
+   +'<td class="num" data-v="'+acv+'">'+acc+'</td>'
+   +'<td class="num" data-v="'+avv+'">'+avc+'</td>'
+   +'<td data-v="'+(p.am||'')+'" style="font-size:11px;color:#6b7280">'+(p.am||'—')+'</td>'
+   +'<td class="num" data-v="'+p.stores+'">'+p.stores+'</td>'
+   +'<td class="num" data-v="'+r.c+'">'+fN(r.c)+'</td>'
+   +'<td class="num" data-v="'+r.dl+'">'+fN(r.dl)+'</td>'
+   +'<td class="num" data-v="'+r.fr.toFixed(2)+'"><span class="badge '+bcls(r.fr,7,12)+'">'+r.fr.toFixed(1)+'%</span></td>'
+   +'<td class="num" data-v="'+r.br.toFixed(2)+'"><span class="badge '+bcls(r.br,8,12)+'">'+r.br.toFixed(1)+'%</span></td>'
+   +'<td class="num" data-v="'+r.tr.toFixed(2)+'"><span class="badge '+bcls(r.tr,3,6)+'">'+r.tr.toFixed(1)+'%</span></td>'
+   +'<td class="num" data-v="'+r.ltr.toFixed(2)+'">'+r.ltr.toFixed(1)+'%</td>'
+   +'<td class="num" data-v="'+r.aov.toFixed(2)+'">€'+r.aov.toFixed(1)+'</td>'
+   +'<td class="num" data-v="'+r.lost.toFixed(0)+'" style="color:#991b1b">'+fE(r.lost)+'</td>'
+   +'<td style="font-size:11px">'+dn+'</td></tr>';
+}
+function renderRoot(va){
+  var show=null;
+  if(va&&va!=='all'){var p=va.split(':'),k=+p[1]; if(p[0]==='w') show=[C.weeks[k]]; else if(p[0]==='m') show=C.months[k].weeks;}
+  var els=document.querySelectorAll('.rcweek');
+  els.forEach(function(el){ el.style.display=(!show||show.indexOf(el.getAttribute('data-wk'))>=0)?'':'none'; });
+}
+function applyFilter(){
+  var va=document.getElementById('fltA').value, vb=document.getElementById('fltB').value;
+  var wsA=_wsFromVal(va), wsB=(vb&&vb!=='none')?_wsFromVal(vb):null;
+  document.getElementById('fltPill').textContent=_lblFromVal(va)+(wsB?(' vs '+_lblFromVal(vb)):'');
+  [renderFailed,renderBad,renderComp,renderSMB].forEach(function(fn){ try{ fn(wsA,wsB); }catch(e){ console.error('filter render error',e); } });
+  try{ renderRoot(va); }catch(e){ console.error(e); }
+}
+'''
 
 # chart data
 import json as _j
@@ -748,6 +991,12 @@ tr:hover{{background:#f9fafb}}
 .tab.active .cnt{{background:#fee2e2;color:#991b1b}}
 .tabpane{{display:none}}
 .tabpane.active{{display:block}}
+.fbar{{display:flex;align-items:center;gap:10px;flex-wrap:wrap;background:#fff;border:1px solid var(--border);border-radius:10px;padding:12px 16px;margin-bottom:22px;box-shadow:0 1px 3px rgba(0,0,0,.04)}}
+.fbar label{{font-size:12px;font-weight:600;color:var(--muted)}}
+.fbar select{{font-family:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--border);border-radius:8px;background:#fff;color:var(--text);cursor:pointer}}
+.fbar .fhint{{font-size:11px;color:var(--muted);margin-left:auto}}
+.fbar .pill{{font-size:11px;font-weight:700;padding:3px 10px;border-radius:99px;background:#eef2ff;color:#3730a3}}
+.dcmp{{font-size:10px;font-weight:700}}
 table.sortable th{{cursor:pointer;user-select:none}}
 table.sortable th:hover{{color:var(--text)}}
 @media(max-width:900px){{.grid-2,.grid-3,.grid-4{{grid-template-columns:1fr}}}}
@@ -783,6 +1032,15 @@ table.sortable th:hover{{color:var(--text)}}
   <button class="tab" id="tab-root" onclick="showTab('root')">🔎 Причини &amp; дії <span class="cnt">{len(rc_flags)}</span></button>
 </div>
 
+<div class="fbar">
+  <label>Період:</label>
+  <select id="fltA" onchange="applyFilter()"></select>
+  <label>Порівняти з:</label>
+  <select id="fltB" onchange="applyFilter()"></select>
+  <span class="pill" id="fltPill">весь період</span>
+  <span class="fhint">Фільтр змінює KPI та таблиці партнерів (Failed / Enterprise / Bad / Скарги / SMB) і тижні у вкладці «Причини». Δ — зміна проти періоду порівняння.</span>
+</div>
+
 <div class="tabpane active" id="pane-failed">
 
 <!-- VERDICT -->
@@ -795,7 +1053,7 @@ table.sortable th:hover{{color:var(--text)}}
 
 <!-- KPI -->
 <div class="section">
-  <div class="grid-4">
+  <div class="grid-4" id="kpi-failed">
     <div class="card kpi"><div class="kpi-label">Failed ордери (UA stores)</div><div class="kpi-value">{fmt(F)}</div><div class="kpi-sub down">{F/G*100:.1f}% fail-rate</div></div>
     <div class="card kpi"><div class="kpi-label">Втрачений GMV (орієнтовно)</div><div class="kpi-value" style="color:#991b1b">€{GMV_LOST/1000:.1f}k</div><div class="kpi-sub down">{GMV_LOST/(GMV_DELIV+GMV_LOST)*100:.1f}% від потенц. GMV</div></div>
     <div class="card kpi"><div class="kpi-label">Партнерська провина (топ-15)</div><div class="kpi-value">{prov_share:.0f}%</div><div class="kpi-sub down">не відповіли / відхилили</div></div>
@@ -837,14 +1095,14 @@ table.sortable th:hover{{color:var(--text)}}
   <div class="card">
     <table>
       <thead><tr><th>Партнер</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Втрач. GMV</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
-      <tbody>{totals_row}{rows_html}</tbody>
+      <tbody id="tb-failed">{totals_row}{rows_html}</tbody>
     </table>
   </div>
-  <h3 style="margin:22px 0 10px">Усі Enterprise-партнери ({len(ent_list)})</h3>
+  <h3 id="ent-h" style="margin:22px 0 10px">Усі Enterprise-партнери ({len(ent_list)})</h3>
   <div class="card">
     <table>
       <thead><tr><th>Партнер (Enterprise)</th><th class="num">Створено</th><th class="num">Failed</th><th class="num">Fail-rate</th><th class="num">Втрач. GMV</th><th class="num">Тренд (перш.→ост. тижд.)</th><th>Домінуюча причина</th></tr></thead>
-      <tbody>{ent_totals}{ent_rows}</tbody>
+      <tbody id="tb-ent">{ent_totals}{ent_rows}</tbody>
     </table>
   </div>
 </div>
@@ -992,7 +1250,7 @@ table.sortable th:hover{{color:var(--text)}}
     </div>
   </div>
   <div class="section">
-    <div class="grid-4">
+    <div class="grid-4" id="kpi-bad">
       <div class="card kpi"><div class="kpi-label">Bad orders</div><div class="kpi-value" style="color:#ea580c">{fmt(BAD)}</div><div class="kpi-sub down">{bad_rate:.1f}% доставлених</div></div>
       <div class="card kpi"><div class="kpi-label">Запізнення &gt;10 хв</div><div class="kpi-value">{fmt(LATE10)}</div><div class="kpi-sub neutral">{late_rate:.1f}% доставлених</div></div>
       <div class="card kpi"><div class="kpi-label">Провина партнера</div><div class="kpi-value">{actor['provider']/BATT*100:.0f}%</div><div class="kpi-sub down">{fmt(actor['provider'])} bad-ордерів</div></div>
@@ -1020,7 +1278,7 @@ table.sortable th:hover{{color:var(--text)}}
     <div class="card">
       <table>
         <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Bad</th><th class="num">Bad-rate</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th></tr></thead>
-        <tbody>{badtotals}{badrows}</tbody>
+        <tbody id="tb-bad">{badtotals}{badrows}</tbody>
       </table>
     </div>
   </div>
@@ -1044,7 +1302,7 @@ table.sortable th:hover{{color:var(--text)}}
     </div>
   </div>
   <div class="section">
-    <div class="grid-4">
+    <div class="grid-4" id="kpi-comp">
       <div class="card kpi"><div class="kpi-label">Скарги (тикети)</div><div class="kpi-value" style="color:#2563eb">{fmt(TIC)}</div><div class="kpi-sub down">{tic_rate:.1f}% доставлених</div></div>
       <div class="card kpi"><div class="kpi-label">Категорій скарг (eater)</div><div class="kpi-value">{fmt(CTOT)}</div><div class="kpi-sub stable">issues attributed</div></div>
       <div class="card kpi"><div class="kpi-label">Низькі оцінки їжі</div><div class="kpi-value">{fmt(LOW)}</div><div class="kpi-sub neutral">рейтинг &le;3</div></div>
@@ -1069,7 +1327,7 @@ table.sortable th:hover{{color:var(--text)}}
     <div class="card">
       <table>
         <thead><tr><th>Партнер</th><th class="num">Доставлено</th><th class="num">Скарги (тикети)</th><th class="num">Ticket-rate</th><th>Дом. категорія скарг</th></tr></thead>
-        <tbody>{comptotals}{comprows}</tbody>
+        <tbody id="tb-comp">{comptotals}{comprows}</tbody>
       </table>
     </div>
   </div>
@@ -1098,7 +1356,7 @@ table.sortable th:hover{{color:var(--text)}}
     </div>
   </div>
   <div class="section">
-    <div class="grid-3">
+    <div class="grid-3" id="kpi-smb">
       <div class="card kpi"><div class="kpi-label">SMB-партнерів (з замовл.)</div><div class="kpi-value">{len(smb_list)}</div><div class="kpi-sub stable">{sum(p_tot[g][1] for g in smb_list):,} доставлених</div></div>
       <div class="card kpi"><div class="kpi-label">Availability (SMB)</div><div class="kpi-value" style="color:{'#16a34a' if S_avail>=85 else ('#ca8a04' if S_avail>=70 else '#dc2626')}">{S_avail:.0f}%</div><div class="kpi-sub stable">active / working time</div></div>
       <div class="card kpi"><div class="kpi-label">Acceptance (SMB)</div><div class="kpi-value" style="color:{'#16a34a' if S_acc>=95 else ('#ca8a04' if S_acc>=85 else '#dc2626')}">{S_acc:.0f}%</div><div class="kpi-sub stable">прийнято партнером</div></div>
@@ -1130,7 +1388,7 @@ table.sortable th:hover{{color:var(--text)}}
           <th class="num" onclick="sortSMB(13,'n')">Втрач.GMV</th>
           <th onclick="sortSMB(14,'s')">Дом. причина фейлів</th>
         </tr></thead>
-        <tbody>{smb_rows}</tbody>
+        <tbody id="tb-smb">{smb_rows}</tbody>
       </table>
       </div>
       <div style="font-size:11px;color:#9ca3af;margin-top:8px">Клік на заголовок — сортування. Fail/Bad/Скарги: зелений — ок, жовтий — увага, червоний — критично. <b>Availability</b> = active/working time (<code>etl_delivery_provider_daily_availability</code>); <b>Acceptance</b> = <code>provider_acceptance_rate</code> (<code>fact_provider_weekly</code>); для availability/acceptance зелений = високий (добре). «—» — немає даних за період.</div>
@@ -1163,6 +1421,7 @@ table.sortable th:hover{{color:var(--text)}}
 
 <script>
 const D={_j.dumps(JS, ensure_ascii=False)};
+const C={_j.dumps(CLIENT, ensure_ascii=False)};
 const gridc='#eef1f4';
 const pctY={{grid:{{drawOnChartArea:false}},position:'right',title:{{display:true,text:'%'}}}};
 const built={{}};
@@ -1244,7 +1503,10 @@ function showTab(id){{
   }});
   if(!built[id]){{ BUILDERS[id](); built[id]=true; }}
 }}
+{FILTER_JS}
+initFilter();
 showTab('failed');
+applyFilter();
 
 let smbSort={{col:-1,dir:1}};
 function sortSMB(col,type){{
