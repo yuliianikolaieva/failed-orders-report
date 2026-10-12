@@ -1,6 +1,6 @@
 # -*- coding: utf-8 -*-
 """Shared Databricks REST-API query helper (reuses VARUS .env)."""
-import json, os, time, urllib.request, ssl
+import http.client, json, os, time, urllib.error, urllib.request, ssl
 from pathlib import Path
 
 # .env шукається у кількох місцях (перше читабельне виграє). Локальний клон для
@@ -38,18 +38,28 @@ if os.environ.get("DATABRICKS_TLS_NO_VERIFY", "").lower() in ("1", "true", "yes"
     _CTX.verify_mode = ssl.CERT_NONE
 
 
+def _api_json(req, retries=4):
+    for attempt in range(retries):
+        try:
+            return json.load(urllib.request.urlopen(req, context=_CTX))
+        except (urllib.error.URLError, http.client.IncompleteRead, json.JSONDecodeError) as e:
+            if attempt + 1 >= retries:
+                raise
+            time.sleep(2 ** attempt)
+
+
 def run(sql):
     body = json.dumps({"warehouse_id": WID, "statement": sql,
                        "wait_timeout": "50s", "format": "JSON_ARRAY"}).encode()
     req = urllib.request.Request("https://%s/api/2.0/sql/statements" % HOST, data=body,
         headers={"Authorization": "Bearer %s" % TOKEN, "Content-Type": "application/json"})
-    d = json.load(urllib.request.urlopen(req, context=_CTX))
+    d = _api_json(req)
     sid = d["statement_id"]
     while d["status"]["state"] in ("PENDING", "RUNNING"):
         time.sleep(3)
-        d = json.load(urllib.request.urlopen(urllib.request.Request(
+        d = _api_json(urllib.request.Request(
             "https://%s/api/2.0/sql/statements/%s" % (HOST, sid),
-            headers={"Authorization": "Bearer %s" % TOKEN}), context=_CTX))
+            headers={"Authorization": "Bearer %s" % TOKEN}))
     if d["status"]["state"] != "SUCCEEDED":
         raise SystemExit("FAIL " + json.dumps(d["status"]))
     return d.get("result", {}).get("data_array", []) or []
@@ -61,13 +71,13 @@ def run_cols(sql):
                        "wait_timeout": "50s", "format": "JSON_ARRAY"}).encode()
     req = urllib.request.Request("https://%s/api/2.0/sql/statements" % HOST, data=body,
         headers={"Authorization": "Bearer %s" % TOKEN, "Content-Type": "application/json"})
-    d = json.load(urllib.request.urlopen(req, context=_CTX))
+    d = _api_json(req)
     sid = d["statement_id"]
     while d["status"]["state"] in ("PENDING", "RUNNING"):
         time.sleep(3)
-        d = json.load(urllib.request.urlopen(urllib.request.Request(
+        d = _api_json(urllib.request.Request(
             "https://%s/api/2.0/sql/statements/%s" % (HOST, sid),
-            headers={"Authorization": "Bearer %s" % TOKEN}), context=_CTX))
+            headers={"Authorization": "Bearer %s" % TOKEN}))
     if d["status"]["state"] != "SUCCEEDED":
         raise SystemExit("FAIL " + json.dumps(d["status"]))
     manifest = d.get("result", {}).get("manifest") or d.get("manifest", {})
